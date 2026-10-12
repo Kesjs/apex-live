@@ -6,11 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "lint": "oxlint src",
-    "preview": "vite preview"
+    "lint": "tsc -b --pretty false",
+    "preview": "vite preview",
+    "api": "npm --prefix backend run dev",
+    "api:seed": "npm --prefix backend run seed"
   },
   "dependencies": {
-    "@phosphor-icons/react": "^2.1.7",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

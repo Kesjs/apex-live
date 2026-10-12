@@ -1,0 +1,14 @@
+{
+  "name": "apex-backend",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.18" },
+  "scripts": {
+    "seed": "node --no-warnings src/cli.ts seed",
+    "batch": "node --no-warnings src/cli.ts batch",
+    "evaluer": "node --no-warnings src/cli.ts evaluer",
+    "dev": "node --no-warnings src/cli.ts serve",
+    "test": "node --test --no-warnings test/*.test.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  }
+}

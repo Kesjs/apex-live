@@ -24,3 +24,7 @@ pnpm-debug.log*
 .DS_Store
 *.suo
 *.sw?
+
+# Base de données locale du back-end
+*.db
+*.db-journal
