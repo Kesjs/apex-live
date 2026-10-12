@@ -28,3 +28,5 @@ pnpm-debug.log*
 # Base de données locale du back-end
 *.db
 *.db-journal
+
+.vercel
