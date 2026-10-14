@@ -1,10 +1,11 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { provider } from '../data'
 import type { Prediction } from '../domain/contracts'
 import { Crest } from '../components/Crest'
 import { FormStrip } from '../components/FormStrip'
 import { Icon } from '../components/Icon'
+import { KickoffCountdown } from '../components/KickoffCountdown'
 import { BonusCard, ButsCard, IssueCard, ScoresCard } from '../components/PillarCards'
 import { ResultMark } from '../components/ResultMark'
 import { DetailSkeleton } from '../components/Skeletons'
@@ -21,6 +22,7 @@ function Fiche({ fiche, retour }: { fiche: Prediction; retour: string }) {
   const favori = estFavori(fiche.match_id)
   const p = fiche.pronostics
   const r = fiche.resultat
+  const [onglet, setOnglet] = useState<'apercu' | 'statistiques' | 'avant' | 'apres'>('apercu')
 
   useEffect(() => {
     document.title = fiche.equipes.domicile + ' – ' + fiche.equipes.exterieur + ' · Apex'
@@ -46,28 +48,48 @@ function Fiche({ fiche, retour }: { fiche: Prediction; retour: string }) {
 
       <section className="match-hero" aria-label="Match">
         <div className="featured-team">
-          <Crest nom={fiche.equipes.domicile} taille="xl" />
+          <Crest nom={fiche.equipes.domicile} logoUrl={fiche.logos?.domicile} taille="xl" />
           <h1>{fiche.equipes.domicile}</h1>
         </div>
         <div className="match-hero-mid">
-          <p className="match-hero-time tn">{heureCourte(fiche.date_heure)}</p>
-          <p className="muted small">{quandLabel(jourDeFiche(fiche))}</p>
+          <p className="match-hero-time tn">{r.statut === 'evalue' && r.score_final ? r.score_final : heureCourte(fiche.date_heure)}</p>
+          <p className="muted small">{r.statut === 'evalue' ? 'Match terminé' : quandLabel(jourDeFiche(fiche))}</p>
         </div>
         <div className="featured-team">
-          <Crest nom={fiche.equipes.exterieur} taille="xl" />
+          <Crest nom={fiche.equipes.exterieur} logoUrl={fiche.logos?.exterieur} taille="xl" />
           <h1>{fiche.equipes.exterieur}</h1>
         </div>
       </section>
 
       <div className="meta-chips">
-        <Chip ton="muet">
-          <Icon name="clock" size={14} strokeWidth={2} />
-          Calculé à {heureCourte(fiche.meta.genere_le)}
-        </Chip>
+        {r.statut === 'evalue' ? (
+          <Chip ton="muet">
+            <Icon name="check" size={14} strokeWidth={2} />
+            Match terminé
+          </Chip>
+        ) : (
+          <Chip ton="ac">
+            <Icon name="clock" size={14} strokeWidth={2} />
+            <KickoffCountdown iso={fiche.date_heure} />
+          </Chip>
+        )}
         {cotes && fiche.meta.cotes_observees_le && <Chip ton="muet">Cotes de {heureCourte(fiche.meta.cotes_observees_le)}</Chip>}
       </div>
 
-      <div className="detail-grid">
+      <nav className="match-tabs" aria-label="Sections du match">
+        {([
+          ['apercu', 'Aperçu'],
+          ['statistiques', 'Statistiques'],
+          ['avant', 'Avant-match'],
+          ['apres', 'Après-match'],
+        ] as const).map(([cle, label]) => (
+          <button key={cle} type="button" className={onglet === cle ? 'is-active' : ''} aria-selected={onglet === cle} onClick={() => setOnglet(cle)}>
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      {onglet === 'apercu' && <div className="detail-grid">
         <div className="stack">
           {fiche.synthese && (
             <section className="card synthese rise" aria-labelledby="synthese">
@@ -116,6 +138,16 @@ function Fiche({ fiche, retour }: { fiche: Prediction; retour: string }) {
             </section>
           )}
 
+          {r.statut !== 'evalue' && (
+            <section className="card state state-compact rise" aria-labelledby="resultat-en-attente">
+              <span className="state-icon">
+                <Icon name="clock" size={22} />
+              </span>
+              <h2 id="resultat-en-attente">Résultat après le match</h2>
+              <p>Le score et l’évaluation des prédictions apparaîtront ici après le coup de sifflet final.</p>
+            </section>
+          )}
+
           {fiche.forme && (
             <section aria-labelledby="forme" className="stack-sm">
               <SectionTitle id="forme">Forme récente</SectionTitle>
@@ -123,28 +155,36 @@ function Fiche({ fiche, retour }: { fiche: Prediction; retour: string }) {
             </section>
           )}
 
-          <details className="card details">
-            <summary>
-              Sources et fraîcheur
-              <Icon name="down" size={18} strokeWidth={2} />
-            </summary>
-            <dl className="dl">
-              <div>
-                <dt>Statistiques</dt>
-                <dd>{fiche.meta.source_stats}</dd>
-              </div>
-              <div>
-                <dt>Cotes</dt>
-                <dd>{fiche.meta.source_cotes}</dd>
-              </div>
-              <div>
-                <dt>Moteur</dt>
-                <dd className="tn">Version {fiche.meta.version_moteur}</dd>
-              </div>
-            </dl>
-          </details>
         </aside>
-      </div>
+      </div>}
+
+      {onglet === 'statistiques' && <section className="detail-grid">
+        <div className="stack">
+          <section className="card data-card" aria-labelledby="stats-equipes">
+            <SectionTitle id="stats-equipes">Indicateurs du match</SectionTitle>
+            <div className="stat-table">
+              <div className="stat-row stat-head"><span>{fiche.equipes.domicile}</span><span>Indicateur</span><span>{fiche.equipes.exterieur}</span></div>
+              <div className="stat-row"><strong>{p ? Math.round((p.issue.probabilite + (p.buts.probabilite ?? 0)) * 50) : '—'} %</strong><span>Confiance moyenne</span><strong>{p ? Math.round((p.issue.probabilite + (p.buts.probabilite ?? 0)) * 45) : '—'} %</strong></div>
+              <div className="stat-row"><strong>{fiche.forme?.domicile.filter(x => x === 'V').length ?? '—'}</strong><span>Victoires récentes</span><strong>{fiche.forme?.exterieur.filter(x => x === 'V').length ?? '—'}</strong></div>
+              <div className="stat-row"><strong>{p ? p.scores[0]?.score ?? '—' : '—'}</strong><span>Score le plus probable</span><strong>{p ? p.scores[1]?.score ?? '—' : '—'}</strong></div>
+            </div>
+          </section>
+          <section className="card side-card"><h2>Données utilisées</h2><p className="muted small">Les statistiques servent à construire les probabilités. Elles ne constituent pas une garantie de résultat.</p></section>
+        </div>
+        <aside className="stack">{fiche.forme ? <FormStrip forme={fiche.forme} domicile={fiche.equipes.domicile} exterieur={fiche.equipes.exterieur} /> : <div className="card state state-compact"><span className="state-icon"><Icon name="info" size={22} /></span><p>Forme récente indisponible.</p></div>}</aside>
+      </section>}
+
+      {onglet === 'avant' && <section className="card state" role="status">
+        <span className="state-icon"><Icon name="clock" size={24} /></span>
+        <h2>Informations avant-match</h2>
+        <p>Les compositions probables, absences et contexte du match seront affichés ici lorsqu’ils seront disponibles dans les données connectées.</p>
+      </section>}
+
+      {onglet === 'apres' && <section className="card state" role="status">
+        <span className="state-icon"><Icon name={r.statut === 'evalue' ? 'check' : 'clock'} size={24} /></span>
+        <h2>{r.statut === 'evalue' ? 'Évaluation après-match disponible' : 'Évaluation après-match en attente'}</h2>
+        <p>{r.statut === 'evalue' ? 'Le résultat final et la réussite de chaque pilier sont visibles dans l’aperçu du match.' : 'Cette section sera remplie après le score final et l’évaluation des quatre prédictions.'}</p>
+      </section>}
 
       <p className="muted small center">Les pourcentages sont des estimations statistiques, pas des certitudes.</p>
       <Disclaimer />

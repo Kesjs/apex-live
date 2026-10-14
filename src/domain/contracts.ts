@@ -110,6 +110,8 @@ export interface Prediction {
   date_heure: string
   competition: string
   equipes: { domicile: string; exterieur: string }
+  /** Écussons fournis par la source quand ils sont disponibles. */
+  logos?: { domicile?: string; exterieur?: string }
   /** null = données insuffisantes, aucun pronostic publié. */
   pronostics: Pronostics | null
   /** Explique pourquoi il n'y a pas de pronostic. */
@@ -142,6 +144,17 @@ export interface Historique {
   jours: JourHistorique[]
 }
 
+export interface NewsArticle {
+  id: string
+  titre: string
+  resume: string
+  url: string
+  source: string
+  publie_le: string
+  image_url?: string
+  categorie: 'football' | 'champions-league' | 'europa-league'
+}
+
 /** Ce que le front attend de la source de données (démo ou vrai back-end). */
 export interface ApexProvider {
   /** Fiches d'une journée (AAAA-MM-JJ). Tableau vide si aucun match. */
@@ -149,6 +162,7 @@ export interface ApexProvider {
   /** null si le match n'existe pas. */
   getMatch(matchId: string): Promise<Prediction | null>
   getHistory(periode: PeriodeHistorique): Promise<Historique>
+  getNews(categorie?: NewsArticle['categorie']): Promise<NewsArticle[]>
   /** Libellé affiché dans l'interface quand la source n'est pas réelle. */
   readonly modeLabel?: string
 }

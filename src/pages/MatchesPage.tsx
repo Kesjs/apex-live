@@ -10,6 +10,7 @@ import { useDay } from '../lib/day'
 import { addDays, jourLongLabel } from '../lib/format'
 import { parCompetition } from '../lib/matchs'
 import { useAsync } from '../lib/useAsync'
+import { useRouter } from '../lib/router'
 
 function normalise(texte: string): string {
   return texte
@@ -18,10 +19,20 @@ function normalise(texte: string): string {
     .replace(/[̀-ͯ]/g, '')
 }
 
+function parHeure<T extends { date_heure: string }>(fiches: T[]): Array<[string, T[]]> {
+  const groupes = new Map<string, T[]>()
+  fiches.forEach(fiche => {
+    const heure = new Intl.DateTimeFormat('fr-FR', { hour: '2-digit', minute: '2-digit' }).format(new Date(fiche.date_heure))
+    groupes.set(heure, [...(groupes.get(heure) ?? []), fiche])
+  })
+  return [...groupes.entries()].sort(([a], [b]) => a.localeCompare(b))
+}
+
 export default function MatchesPage() {
   const { jour, setJour } = useDay()
+  const { search } = useRouter()
   const [etat, reessayer] = useAsync(() => provider.listMatches(jour), [jour])
-  const [recherche, setRecherche] = useState('')
+  const [recherche, setRecherche] = useState(() => new URLSearchParams(search).get('q') ?? '')
   const [competition, setCompetition] = useState('toutes')
 
   const fiches = etat.status === 'ready' ? etat.data : []
@@ -102,11 +113,14 @@ export default function MatchesPage() {
             <p className="kicker">
               {nom} · {groupe.length} {groupe.length > 1 ? 'matchs' : 'match'}
             </p>
-            <div className="card list">
-              {groupe.map((f, i) => (
-                <MatchRow key={f.match_id} fiche={f} index={i} />
-              ))}
-            </div>
+            {parHeure(groupe).map(([heure, matches]) => (
+              <div key={heure} className="hour-group">
+                <div className="hour-label"><Icon name="clock" size={14} /> {heure}</div>
+                <div className="card list">
+                  {matches.map((f, i) => <MatchRow key={f.match_id} fiche={f} index={i} />)}
+                </div>
+              </div>
+            ))}
           </section>
         ))}
 

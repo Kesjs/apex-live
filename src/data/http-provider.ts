@@ -1,4 +1,4 @@
-import type { ApexProvider, Historique, PeriodeHistorique, Prediction } from '../domain/contracts'
+import type { ApexProvider, Historique, NewsArticle, PeriodeHistorique, Prediction } from '../domain/contracts'
 
 /**
  * Source de données réelle : appelle ton back-end.
@@ -43,5 +43,10 @@ export const httpProvider: ApexProvider = {
     const { data } = await requete<Historique>('/api/historique?periode=' + encodeURIComponent(periode))
     if (!data) throw new Error('Historique indisponible.')
     return data
+  },
+  async getNews(categorie) {
+    const query = categorie ? '?categorie=' + encodeURIComponent(categorie) : ''
+    const { data } = await requete<NewsArticle[]>('/api/actualites' + query)
+    return data ?? []
   },
 }

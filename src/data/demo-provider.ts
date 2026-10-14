@@ -6,6 +6,7 @@ import type {
   JourHistorique,
   LettreForme,
   PeriodeHistorique,
+  NewsArticle,
   PilierId,
   Prediction,
   PronosticBonus,
@@ -314,5 +315,8 @@ export const demoProvider: ApexProvider = {
     await sleep(400)
     if (modeDemo() === 'erreur') throw new Error('Source de démonstration en panne (paramètre ?demo=erreur).')
     return buildHistory(periode)
+  },
+  async getNews() {
+    return [] as NewsArticle[]
   },
 }

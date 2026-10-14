@@ -38,3 +38,17 @@ $$;
 -- Les fonctions du schéma public sont appelables par tout le monde via l'API : on les réserve au back-end.
 revoke all on function public.enregistrer_fiche(text, date, timestamptz, jsonb, jsonb) from public, anon, authenticated;
 grant execute on function public.enregistrer_fiche(text, date, timestamptz, jsonb, jsonb) to service_role;
+alter function public.enregistrer_fiche(text, date, timestamptz, jsonb, jsonb) set search_path = public;
+
+-- Actualités éditoriales récupérées en lot (jamais appelées depuis le navigateur).
+create table if not exists public.actualites (
+  id         text primary key,
+  categorie  text not null check (categorie in ('football', 'champions-league', 'europa-league')),
+  article    jsonb not null,
+  publie_le  timestamptz not null,
+  maj_le     timestamptz not null default now()
+);
+
+create index if not exists actualites_date_idx on public.actualites (publie_le desc);
+alter table public.actualites enable row level security;
+revoke all on table public.actualites from anon, authenticated;

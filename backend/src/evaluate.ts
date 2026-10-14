@@ -53,9 +53,13 @@ export function evaluerFiche(interne: Interne | null, r: ResultatReel): Resultat
 /** Évalue toutes les fiches dont le match est terminé. Renvoie le nombre de fiches mises à jour. */
 export async function evaluerTermines(store: Stockage, source: Source, maintenant: Date = new Date()): Promise<number> {
   const limite = new Date(maintenant.getTime() - DELAI_APRES_COUP_ENVOI_MS).toISOString()
+  const lignes = await store.aEvaluer(limite)
+  const resultats = source.resultats
+    ? await source.resultats(lignes.map(ligne => ligne.match_id))
+    : null
   let n = 0
-  for (const ligne of await store.aEvaluer(limite)) {
-    const reel = await source.resultat(ligne.match_id)
+  for (const ligne of lignes) {
+    const reel = resultats ? (resultats.get(ligne.match_id) ?? null) : await source.resultat(ligne.match_id)
     if (!reel) continue
     const res = evaluerFiche(ligne.interne, reel)
     if (!res) continue

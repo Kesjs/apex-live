@@ -84,8 +84,16 @@ Une seule fiche (même forme que ci-dessus). **404** si le match n'existe pas (l
 
 Tout statut ≠ 2xx (hors 404 sur `/api/matchs/:id`) est affiché comme « le serveur a répondu avec une erreur » avec un bouton Réessayer. Pas besoin de format d'erreur particulier.
 
+## 4. `GET /api/actualites?categorie=football|champions-league|europa-league`
+
+Renvoie les articles synchronisés côté serveur depuis TheNewsAPI. Le navigateur ne contacte jamais le fournisseur externe et ne reçoit jamais sa clé.
+
+```json
+[{"id":"…","titre":"…","resume":"…","url":"https://…","source":"…","publie_le":"2026-10-14T08:00:00Z","categorie":"football"}]
+```
+
 ## Brancher le vrai back-end
 
 1. Copie `.env.example` en `.env`.
-2. Mets `VITE_DATA_SOURCE=api` et `VITE_API_URL=http://localhost:8787` (l'adresse de ton back-end).
+2. Mets `VITE_DATA_SOURCE=api` et `VITE_API_URL=http://localhost:8787` (l'adresse de ton back-end). Le mode réel est déjà sélectionné par défaut si la variable est absente.
 3. Relance `npm run dev`. Aucun autre fichier à modifier : la source est choisie dans `src/data/index.ts`.

@@ -23,6 +23,7 @@ export function construireFiche(r: Rencontre, ctx: Contexte, source: { nom: stri
     date_heure: r.date_heure,
     competition: r.competition,
     equipes: { domicile: r.domicile.nom, exterieur: r.exterieur.nom },
+    ...(r.logos ? { logos: r.logos } : {}),
     pronostics: null,
     meta: {
       genere_le: maintenant.toISOString(),

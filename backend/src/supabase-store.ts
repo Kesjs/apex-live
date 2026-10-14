@@ -1,4 +1,4 @@
-import type { Prediction, ResultatFiche } from '../../src/domain/contracts.ts'
+import type { NewsArticle, Prediction, ResultatFiche } from '../../src/domain/contracts.ts'
 import type { LigneAEvaluer, Stockage } from './store.ts'
 import type { Interne } from './types.ts'
 
@@ -67,6 +67,21 @@ export class SupabaseStore implements Stockage {
     return this.toutesLesLignes<{ jour: string; fiche: Prediction }>(
       '/fiches?select=jour,fiche&evalue=eq.true&jour=gte.' + encodeURIComponent(depuisJour) + '&order=jour.desc,date_heure.desc',
     )
+  }
+
+  async enregistrerActualites(articles: NewsArticle[]): Promise<void> {
+    if (!articles.length) return
+    await this.requete('/actualites?on_conflict=id', {
+      method: 'POST',
+      headers: { prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: articles.map(article => ({ id: article.id, categorie: article.categorie, article, publie_le: article.publie_le })),
+    })
+  }
+
+  async actualites(categorie?: NewsArticle['categorie']): Promise<NewsArticle[]> {
+    const filter = categorie ? '&categorie=eq.' + encodeURIComponent(categorie) : ''
+    const r = await this.requete('/actualites?select=article&order=publie_le.desc&limit=50' + filter)
+    return ((await r.json()) as Array<{ article: NewsArticle }>).map(row => row.article)
   }
 
   /** Supabase renvoie au plus 1000 lignes par requête : on lit par tranches. */

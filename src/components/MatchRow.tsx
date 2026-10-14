@@ -32,12 +32,7 @@ export function FiltrePiliers({ valeur, onChange }: { valeur: Filtre; onChange: 
 function Pronos({ fiche, filtre }: { fiche: Prediction; filtre: Filtre }) {
   const p = fiche.pronostics
   if (!p) {
-    return (
-      <Chip ton="muet">
-        <Icon name="info" size={14} />
-        Données insuffisantes
-      </Chip>
-    )
+    return <span className="match-pending" title={fiche.raison_absence ?? 'Pronostic indisponible'} aria-label="Pronostic indisponible"><Icon name="info" size={15} /></span>
   }
   const issue = (
     <Chip ton="ac">
@@ -104,11 +99,11 @@ export function MatchRow({ fiche, filtre = 'tous', index = 0 }: { fiche: Predict
       </time>
       <span className="mrow-teams">
         <span>
-          <Crest nom={fiche.equipes.domicile} taille="sm" />
+          <Crest nom={fiche.equipes.domicile} logoUrl={fiche.logos?.domicile} taille="sm" />
           {fiche.equipes.domicile}
         </span>
         <span>
-          <Crest nom={fiche.equipes.exterieur} taille="sm" />
+          <Crest nom={fiche.equipes.exterieur} logoUrl={fiche.logos?.exterieur} taille="sm" />
           {fiche.equipes.exterieur}
         </span>
       </span>

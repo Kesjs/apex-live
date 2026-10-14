@@ -46,6 +46,11 @@ export function creerServeur(store: Stockage, opts: { origine?: string; maintena
         if (!PERIODES.includes(periode)) return envoyer(400, { erreur: 'Paramètre periode attendu : 7j, 30j ou saison.' })
         return envoyer(200, await construireHistorique(store, periode, maintenant()))
       }
+      if (chemin === '/api/actualites') {
+        const categorie = url.searchParams.get('categorie') as 'football' | 'champions-league' | 'europa-league' | null
+        if (categorie && !['football', 'champions-league', 'europa-league'].includes(categorie)) return envoyer(400, { erreur: 'Catégorie invalide.' })
+        return envoyer(200, await store.actualites(categorie ?? undefined), 'public, max-age=300')
+      }
       return envoyer(404, { erreur: 'Route inconnue.' })
     } catch (e) {
       console.error(e)

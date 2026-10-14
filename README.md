@@ -9,12 +9,11 @@ Le projet a deux parties :
 | `src/` | Front-end (React 19 + TypeScript + Vite). Il affiche, il ne calcule rien. |
 | `backend/` | Moteur de calcul, lot quotidien, évaluation des résultats et API. Node 22.18+, aucune dépendance. |
 
-## Démarrer (tout en local, avec des données fictives)
+## Démarrer avec les vraies données
 
 ```bash
 npm install
-npm run api:seed     # crée la base avec 3 semaines de données fictives
-npm run api          # back-end sur http://localhost:8787   (laisser ce terminal ouvert)
+npm run api          # back-end sur http://localhost:8787 (avec backend/.env configuré)
 ```
 
 Dans un second terminal :
@@ -24,13 +23,13 @@ cp .env.example .env     # puis mettre VITE_DATA_SOURCE=api
 npm run dev              # front sur http://localhost:5173
 ```
 
-Sans back-end, le front fonctionne seul : `VITE_DATA_SOURCE=demo` (valeur par défaut) utilise des données fictives intégrées. Ajouter `?demo=erreur` ou `?demo=vide` à l'adresse pour voir les écrans d'erreur et d'absence de match.
+Le mode réel est la valeur par défaut. Le mode fictif reste disponible uniquement avec `VITE_DATA_SOURCE=demo` pour tester les états de l'interface. Il ne doit pas être utilisé en production.
 
 Autres commandes : `npm run build` (vérification TypeScript + build), `npm run lint`, et dans `backend/` : `npm test`.
 
 ## Écrans
 
-Accueil (match vedette, matchs du jour, fiabilité) · Matchs (recherche et filtres) · Fiche d'un match (synthèse, 4 pronostics, forme, sources) · Historique (taux de réussite et résultats ✓/✗) · Réglages (favoris, afficher les cotes, animations, à propos).
+Accueil (match vedette, matchs du jour, fiabilité) · Matchs (recherche et filtres) · Fiche d'un match (synthèse, 4 pronostics, forme, sources) · Historique (taux de réussite et résultats ✓/✗) · Actualités (articles synchronisés avec source externe) · Réglages (favoris, afficher les cotes, animations, à propos).
 
 ## Documentation
 

@@ -80,7 +80,7 @@ test('Value : seuil minimum et plafond de suspicion', () => {
 })
 
 test('Fiche : données insuffisantes → pas de pronostic, avec raison', () => {
-  const { fiche, interne } = construireFiche(rencontre(matchs(3, 1, 1), matchs(10, 1, 1)), ctx, { nom: 's', nomCotes: 'c' })
+  const { fiche, interne } = construireFiche(rencontre(matchs(2, 1, 1), matchs(10, 1, 1)), ctx, { nom: 's', nomCotes: 'c' })
   assert.equal(fiche.pronostics, null)
   assert.ok(fiche.raison_absence)
   assert.equal(interne, null)

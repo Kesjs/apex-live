@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import { provider } from '../data'
-import type { Historique, PilierId, Prediction } from '../domain/contracts'
+import type { Prediction } from '../domain/contracts'
 import { DateRail } from '../components/DateRail'
 import { FeaturedMatch } from '../components/FeaturedMatch'
 import { Icon } from '../components/Icon'
@@ -9,49 +9,12 @@ import { FiltrePiliers, MatchRow } from '../components/MatchRow'
 import type { Filtre } from '../components/MatchRow'
 import { PageHeader } from '../components/PageHeader'
 import { FeaturedSkeleton, ListSkeleton } from '../components/Skeletons'
-import { Compteur, Disclaimer, EmptyState, ErrorState, ProbBar, SectionTitle } from '../components/ui'
+import { Disclaimer, EmptyState, ErrorState, SectionTitle } from '../components/ui'
 import { useDay } from '../lib/day'
-import { addDays, jourLongLabel, pct, pilierLabel, quandLabel, todayISO } from '../lib/format'
+import { addDays, jourLongLabel, pct, quandLabel, todayISO } from '../lib/format'
 import { filtrer, lesPlusSurs, parCompetition, vedette } from '../lib/matchs'
 import { Link, useRouter } from '../lib/router'
 import { useAsync } from '../lib/useAsync'
-import type { AsyncState } from '../lib/useAsync'
-
-const PILIERS: PilierId[] = ['issue', 'buts', 'bonus', 'scores']
-
-function Fiabilite({ etat }: { etat: AsyncState<Historique> }) {
-  return (
-    <section className="card side-card rise" style={{ '--i': 3 } as CSSProperties} aria-labelledby="fiabilite">
-      <h2 id="fiabilite">Fiabilité sur 30 jours</h2>
-      <p className="muted small">Part des pronostics qui se sont réalisés</p>
-      {etat.status === 'loading' && <ListSkeleton lignes={2} />}
-      {etat.status === 'error' && <p className="muted small">Historique indisponible pour le moment.</p>}
-      {etat.status === 'ready' && (
-        <div className="taux-list">
-          {PILIERS.map((pilier, i) => {
-            const t = etat.data.taux[pilier]
-            const ratio = t.total > 0 ? t.reussis / t.total : 0
-            return (
-              <div key={pilier}>
-                <div className="taux-line">
-                  <span>{pilierLabel[pilier]}</span>
-                  <span className={'tn ' + (pilier === 'bonus' || pilier === 'scores' ? 'amber' : 'accent')}>
-                    {t.total > 0 ? <Compteur valeur={ratio} delai={i * 100} /> : '—'}
-                  </span>
-                </div>
-                <ProbBar valeur={ratio} ton={pilier === 'bonus' || pilier === 'scores' ? 'am' : 'ac'} delai={i * 100} />
-              </div>
-            )
-          })}
-        </div>
-      )}
-      <Link to="/historique" className="text-link">
-        Voir l'historique complet
-        <Icon name="arrow" size={16} strokeWidth={2} />
-      </Link>
-    </section>
-  )
-}
 
 function PlusSurs({ fiches }: { fiches: Prediction[] }) {
   const liste = lesPlusSurs(fiches)
@@ -81,7 +44,6 @@ export default function HomePage() {
   const { jour, setJour } = useDay()
   const { navigate } = useRouter()
   const [etat, reessayer] = useAsync(() => provider.listMatches(jour), [jour])
-  const [historique] = useAsync(() => provider.getHistory('30j'), [])
   const [filtre, setFiltre] = useState<Filtre>('tous')
 
   const estAujourdhui = jour === todayISO()
@@ -171,7 +133,6 @@ export default function HomePage() {
 
         <aside className="stack" aria-label="À savoir">
           {etat.status === 'ready' && <PlusSurs fiches={fiches} />}
-          <Fiabilite etat={historique} />
         </aside>
       </div>
 

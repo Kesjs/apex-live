@@ -7,9 +7,9 @@ import { usePrefs } from '../lib/prefs'
 
 export type Ton = 'neutre' | 'ac' | 'am' | 'muet'
 
-export function Chip({ ton = 'neutre', children, title }: { ton?: Ton; children: ReactNode; title?: string }) {
+export function Chip({ ton = 'neutre', children, title, className = '', dataTooltip }: { ton?: Ton; children: ReactNode; title?: string; className?: string; dataTooltip?: string }) {
   return (
-    <span className={'chip chip-' + ton} title={title}>
+    <span className={'chip chip-' + ton + (className ? ' ' + className : '')} title={title} data-tooltip={dataTooltip}>
       {children}
     </span>
   )
@@ -17,7 +17,13 @@ export function Chip({ ton = 'neutre', children, title }: { ton?: Ton; children:
 
 export function Risque({ niveau }: { niveau: NiveauRisque }) {
   const ton: Ton = niveau === 'faible' ? 'ac' : 'am'
-  return <Chip ton={ton}>{risqueLabel[niveau]}</Chip>
+  const icone = niveau === 'faible' ? 'shield' : niveau === 'moyen' ? 'info' : 'warning'
+  return (
+    <Chip ton={ton} title={'Risque ' + niveau} className="risk-chip" dataTooltip={'Risque ' + niveau}>
+      <Icon name={icone} size={14} strokeWidth={2} />
+      <span className="sr-only">{risqueLabel[niveau]}</span>
+    </Chip>
+  )
 }
 
 export function ProbBar({ valeur, ton = 'ac', max = 1, delai = 0 }: { valeur: number; ton?: 'ac' | 'am'; max?: number; delai?: number }) {

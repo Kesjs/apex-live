@@ -35,6 +35,7 @@ export interface Rencontre {
   competition: string
   domicile: Equipe
   exterieur: Equipe
+  logos?: { domicile?: string; exterieur?: string }
   cotes: Cotes
   cotes_observees_le?: string
 }
@@ -63,6 +64,8 @@ export interface Source {
   rencontres(jour: string): Promise<Rencontre[]>
   contexte(competition: string): Promise<Contexte>
   resultat(matchId: string): Promise<ResultatReel | null>
+  /** Variante groupée facultative, utilisée pour économiser les appels API. */
+  resultats?(matchIds: string[]): Promise<Map<string, ResultatReel>>
 }
 
 /** Ce que le moteur retient de chaque fiche pour pouvoir l'évaluer après le match. */

@@ -4,10 +4,11 @@
   "type": "module",
   "engines": { "node": ">=22.18" },
   "scripts": {
-    "seed": "node --no-warnings src/cli.ts seed",
-    "batch": "node --no-warnings src/cli.ts batch",
-    "evaluer": "node --no-warnings src/cli.ts evaluer",
-    "dev": "node --no-warnings src/cli.ts serve",
+    "seed": "node --env-file-if-exists=.env --no-warnings src/cli.ts seed",
+    "batch": "node --env-file-if-exists=.env --no-warnings src/cli.ts batch",
+    "actualites": "node --env-file-if-exists=.env --no-warnings src/cli.ts actualites",
+    "evaluer": "node --env-file-if-exists=.env --no-warnings src/cli.ts evaluer",
+    "dev": "node --env-file-if-exists=.env --no-warnings src/cli.ts serve",
     "test": "node --test --no-warnings test/*.test.ts",
     "typecheck": "tsc -p tsconfig.json"
   }

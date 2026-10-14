@@ -3,7 +3,7 @@ import { heureCourte, quandLabel, jourDeFiche } from '../lib/format'
 import { Link } from '../lib/router'
 import { Crest } from './Crest'
 import { Icon } from './Icon'
-import { Chip, Compteur, Cote, ProbBar } from './ui'
+import { Chip, Compteur, Cote, ProbBar, Risque } from './ui'
 
 /** Match vedette : les 4 pronostics en un coup d'œil. */
 export function FeaturedMatch({ fiche }: { fiche: Prediction }) {
@@ -26,12 +26,12 @@ export function FeaturedMatch({ fiche }: { fiche: Prediction }) {
 
       <div className="featured-teams">
         <div className="featured-team">
-          <Crest nom={fiche.equipes.domicile} taille="xl" />
+          <Crest nom={fiche.equipes.domicile} logoUrl={fiche.logos?.domicile} taille="xl" />
           <strong>{fiche.equipes.domicile}</strong>
         </div>
         <span className="featured-vs">VS</span>
         <div className="featured-team">
-          <Crest nom={fiche.equipes.exterieur} taille="xl" />
+          <Crest nom={fiche.equipes.exterieur} logoUrl={fiche.logos?.exterieur} taille="xl" />
           <strong>{fiche.equipes.exterieur}</strong>
         </div>
       </div>
@@ -61,7 +61,7 @@ export function FeaturedMatch({ fiche }: { fiche: Prediction }) {
           <p className="tile-foot">
             {p.bonus ? (
               <>
-                <Chip ton="am">Risque moyen</Chip>
+                <Risque niveau="moyen" />
                 <Cote valeur={p.bonus.cote} mode="texte" />
               </>
             ) : (
@@ -73,7 +73,7 @@ export function FeaturedMatch({ fiche }: { fiche: Prediction }) {
           <p className="kicker">4 · Scores</p>
           <p className="tile-value tn">{p.scores.slice(0, 2).map(s => s.score).join(' · ')}</p>
           <p className="tile-foot">
-            <Chip ton="am">Risque élevé</Chip>
+          <Risque niveau="eleve" />
           </p>
         </div>
       </div>

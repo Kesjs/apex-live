@@ -2,7 +2,11 @@ import type { LettreForme } from '../../../src/domain/contracts.ts'
 import type { Contexte, MatchPasse } from '../types.ts'
 
 export const NB_MATCHS = 10
-export const MIN_MATCHS = 5
+// En début de saison, certaines compétitions ne fournissent que 3 ou 4 matchs
+// terminés. Le coefficient de prudence ramène déjà ces petits échantillons vers
+// la moyenne de la ligue : trois matchs permettent donc de publier un signal
+// réel, sans inventer de données.
+export const MIN_MATCHS = 3
 const DECROISSANCE = 0.88
 const PRUDENCE = 7
 

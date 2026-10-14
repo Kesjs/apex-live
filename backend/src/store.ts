@@ -1,5 +1,5 @@
 import { DatabaseSync } from 'node:sqlite'
-import type { Prediction, ResultatFiche } from '../../src/domain/contracts.ts'
+import type { NewsArticle, Prediction, ResultatFiche } from '../../src/domain/contracts.ts'
 import type { Interne } from './types.ts'
 
 export interface LigneAEvaluer {
@@ -20,6 +20,8 @@ export interface Stockage {
   marquerEvalue(id: string, resultat: ResultatFiche): Promise<void>
   /** Fiches évaluées depuis un jour donné (AAAA-MM-JJ), les plus récentes d'abord. */
   evaluees(depuisJour: string): Promise<Array<{ jour: string; fiche: Prediction }>>
+  enregistrerActualites(articles: NewsArticle[]): Promise<void>
+  actualites(categorie?: NewsArticle['categorie']): Promise<NewsArticle[]>
   fermer(): Promise<void>
 }
 
@@ -38,6 +40,14 @@ export class Store implements Stockage {
         evalue     INTEGER NOT NULL DEFAULT 0
       );
       CREATE INDEX IF NOT EXISTS idx_fiches_jour ON fiches(jour);
+      CREATE TABLE IF NOT EXISTS actualites (
+        id TEXT PRIMARY KEY,
+        categorie TEXT NOT NULL,
+        article TEXT NOT NULL,
+        publie_le TEXT NOT NULL,
+        maj_le TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+      CREATE INDEX IF NOT EXISTS idx_actualites_date ON actualites(publie_le DESC);
     `)
   }
 
@@ -85,6 +95,20 @@ export class Store implements Stockage {
       .prepare('SELECT jour, fiche FROM fiches WHERE evalue = 1 AND jour >= ? ORDER BY jour DESC, date_heure DESC')
       .all(depuisJour) as Array<{ jour: string; fiche: string }>
     return lignes.map(l => ({ jour: l.jour, fiche: JSON.parse(l.fiche) as Prediction }))
+  }
+
+  async enregistrerActualites(articles: NewsArticle[]): Promise<void> {
+    const statement = this.db.prepare(`INSERT INTO actualites (id, categorie, article, publie_le, maj_le)
+      VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(id) DO UPDATE SET categorie=excluded.categorie, article=excluded.article, publie_le=excluded.publie_le, maj_le=CURRENT_TIMESTAMP`)
+    for (const article of articles) statement.run(article.id, article.categorie, JSON.stringify(article), article.publie_le)
+  }
+
+  async actualites(categorie?: NewsArticle['categorie']): Promise<NewsArticle[]> {
+    const rows = categorie
+      ? this.db.prepare('SELECT article FROM actualites WHERE categorie = ? ORDER BY publie_le DESC LIMIT 50').all(categorie) as Array<{ article: string }>
+      : this.db.prepare('SELECT article FROM actualites ORDER BY publie_le DESC LIMIT 50').all() as Array<{ article: string }>
+    return rows.map(row => JSON.parse(row.article) as NewsArticle)
   }
 
   async fermer(): Promise<void> {

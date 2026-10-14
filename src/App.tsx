@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Icon, Logo } from './components/Icon'
 import type { IconName } from './components/Icon'
@@ -8,6 +8,7 @@ import HomePage from './pages/HomePage'
 import MatchesPage from './pages/MatchesPage'
 import MatchPage from './pages/MatchPage'
 import SettingsPage from './pages/SettingsPage'
+import NewsPage from './pages/NewsPage'
 import { DayProvider } from './lib/day'
 import { PrefsProvider } from './lib/prefs'
 import { Link, RouterProvider, useRouter } from './lib/router'
@@ -18,6 +19,7 @@ const ENTREES: Entree[] = [
   { to: '/', label: 'Accueil', icone: 'home', actif: p => p === '/' },
   { to: '/matchs', label: 'Matchs', icone: 'ball', actif: p => p === '/matchs' || p.startsWith('/match/') },
   { to: '/historique', label: 'Historique', icone: 'chart', actif: p => p === '/historique' },
+  { to: '/actualites', label: 'Actualités', icone: 'card', actif: p => p === '/actualites' },
   { to: '/reglages', label: 'Réglages', icone: 'sliders', actif: p => p === '/reglages' },
 ]
 
@@ -26,6 +28,7 @@ const TITRES: Record<string, string> = {
   '/matchs': 'Matchs',
   '/historique': 'Historique',
   '/reglages': 'Réglages',
+  '/actualites': 'Actualités',
 }
 
 function Navigation({ variante }: { variante: 'sidebar' | 'bottom' }) {
@@ -51,6 +54,7 @@ function Routes(): ReactNode {
   if (path === '/matchs') return <MatchesPage />
   if (path === '/historique') return <HistoryPage />
   if (path === '/reglages') return <SettingsPage />
+  if (path === '/actualites') return <NewsPage />
   const detail = /^\/match\/([^/]+)\/?$/.exec(path)
   if (detail) return <MatchPage matchId={decodeURIComponent(detail[1])} />
   return (
@@ -70,8 +74,11 @@ function Routes(): ReactNode {
 
 function Shell() {
   const { path } = useRouter()
+  const { navigate } = useRouter()
   const principal = useRef<HTMLElement>(null)
   const premier = useRef(true)
+  const [rechercheOuverte, setRechercheOuverte] = useState(false)
+  const [recherche, setRecherche] = useState('')
 
   useEffect(() => {
     document.title = (TITRES[path] ?? 'Apex') + ' · Apex'
@@ -99,6 +106,17 @@ function Shell() {
         <Navigation variante="sidebar" />
         <p className="sidebar-note">Pronostics informatifs calculés à partir de statistiques. Aucun résultat n'est garanti. Jouer comporte des risques.</p>
       </aside>
+      <header className={'mobile-header' + (rechercheOuverte ? ' search-open' : '')}>
+        <Link to="/" className="mobile-brand" aria-label="Apex, accueil">
+          <Logo size={25} />
+          <strong>Apex</strong>
+        </Link>
+        <form className="mobile-header-actions" onSubmit={event => { event.preventDefault(); navigate('/matchs?q=' + encodeURIComponent(recherche.trim())); setRechercheOuverte(false) }}>
+          {rechercheOuverte && <input className="mobile-search-input" value={recherche} onChange={event => setRecherche(event.target.value)} placeholder="Rechercher une équipe" aria-label="Rechercher une équipe" autoFocus />}
+          <button type="button" className="mobile-header-btn" aria-label={rechercheOuverte ? 'Fermer la recherche' : 'Rechercher'} onClick={() => setRechercheOuverte(value => !value)}><Icon name="search" size={19} /></button>
+          <Link to="/reglages" className="mobile-header-btn" aria-label="Réglages"><Icon name="sliders" size={19} /></Link>
+        </form>
+      </header>
       <main id="main" ref={principal} tabIndex={-1}>
         <div className="page" key={path}>
           <Routes />
