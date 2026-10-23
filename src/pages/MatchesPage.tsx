@@ -6,6 +6,7 @@ import { MatchRow } from '../components/MatchRow'
 import { PageHeader } from '../components/PageHeader'
 import { ListSkeleton } from '../components/Skeletons'
 import { Disclaimer, EmptyState, ErrorState } from '../components/ui'
+import { infosCompetition } from '../lib/competitions'
 import { useDay } from '../lib/day'
 import { addDays, jourLongLabel } from '../lib/format'
 import { parCompetition } from '../lib/matchs'
@@ -33,13 +34,10 @@ export default function MatchesPage() {
   const { search } = useRouter()
   const [etat, reessayer] = useAsync(() => provider.listMatches(jour), [jour])
   const [recherche, setRecherche] = useState(() => new URLSearchParams(search).get('q') ?? '')
-  const [competition, setCompetition] = useState('toutes')
+  const [fermees, setFermees] = useState<string[]>([])
 
   const fiches = etat.status === 'ready' ? etat.data : []
-  const competitions = [...new Set(fiches.map(f => f.competition))]
-  const actuelle = competition === 'toutes' || competitions.includes(competition) ? competition : 'toutes'
   const filtrees = fiches.filter(f => {
-    if (actuelle !== 'toutes' && f.competition !== actuelle) return false
     if (!recherche.trim()) return true
     const q = normalise(recherche.trim())
     return normalise(f.equipes.domicile).includes(q) || normalise(f.equipes.exterieur).includes(q)
@@ -62,15 +60,6 @@ export default function MatchesPage() {
             autoComplete="off"
           />
         </label>
-        {competitions.length > 1 && (
-          <div className="rail" role="group" aria-label="Filtrer par compétition">
-            {['toutes', ...competitions].map(c => (
-              <button type="button" key={c} className="filter-btn" aria-pressed={c === actuelle} onClick={() => setCompetition(c)}>
-                {c === 'toutes' ? 'Toutes les compétitions' : c}
-              </button>
-            ))}
-          </div>
-        )}
       </div>
 
       {etat.status === 'loading' && <ListSkeleton lignes={5} />}
@@ -98,31 +87,49 @@ export default function MatchesPage() {
               className="btn btn-secondary"
               onClick={() => {
                 setRecherche('')
-                setCompetition('toutes')
               }}
             >
-              Effacer les filtres
+              Effacer la recherche
             </button>
           }
         />
       )}
 
       {etat.status === 'ready' &&
-        parCompetition(filtrees).map(([nom, groupe]) => (
-          <section key={nom} className="league" aria-label={nom}>
-            <p className="kicker">
-              {nom} · {groupe.length} {groupe.length > 1 ? 'matchs' : 'match'}
-            </p>
-            {parHeure(groupe).map(([heure, matches]) => (
-              <div key={heure} className="hour-group">
-                <div className="hour-label"><Icon name="clock" size={14} /> {heure}</div>
-                <div className="card list">
-                  {matches.map((f, i) => <MatchRow key={f.match_id} fiche={f} index={i} />)}
+        parCompetition(filtrees).map(([nom, groupe]) => {
+          const ouverte = !fermees.includes(nom)
+          const idListe = 'ligue-' + nom.replace(/\s+/g, '-').toLowerCase()
+          return (
+            <section key={nom} className="league" aria-label={nom}>
+              <button
+                type="button"
+                className="league-head"
+                aria-expanded={ouverte}
+                aria-controls={idListe}
+                onClick={() => setFermees(actuelles => (ouverte ? [...actuelles, nom] : actuelles.filter(n => n !== nom)))}
+              >
+                <span className="league-flag" aria-hidden="true">{infosCompetition(nom).drapeau}</span>
+                <span className="league-name">{nom}</span>
+                <span className="league-count">{groupe.length} {groupe.length > 1 ? 'matchs' : 'match'}</span>
+                <span className={'league-caret' + (ouverte ? ' is-open' : '')} aria-hidden="true">
+                  <Icon name="down" size={18} strokeWidth={2} />
+                </span>
+              </button>
+              {ouverte && (
+                <div id={idListe}>
+                  {parHeure(groupe).map(([heure, matches]) => (
+                    <div key={heure} className="hour-group">
+                      <div className="hour-label"><Icon name="clock" size={14} /> {heure}</div>
+                      <div className="card list">
+                        {matches.map((f, i) => <MatchRow key={f.match_id} fiche={f} index={i} />)}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              </div>
-            ))}
-          </section>
-        ))}
+              )}
+            </section>
+          )
+        })}
 
       <Disclaimer />
     </div>

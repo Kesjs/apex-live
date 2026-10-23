@@ -8,6 +8,7 @@ import type { Stockage } from './store.ts'
 import { SupabaseStore } from './supabase-store.ts'
 import { TheNewsApiSource } from './sources/news-source.ts'
 import { FootballDataSource } from './sources/football-data-source.ts'
+import { StatsCsv } from './sources/stats-csv.ts'
 import type { Source } from './types.ts'
 
 const env = process.env
@@ -29,7 +30,8 @@ function source(): Source {
   }
   if (type === 'football-data') {
     if (!env.FOOTBALL_DATA_KEY) throw new Error('SOURCE=football-data demande FOOTBALL_DATA_KEY.')
-    return new FootballDataSource(env.FOOTBALL_DATA_KEY)
+    // STATS_CSV=non désactive le complément gratuit (cartons, corners, fautes, cotes).
+    return new FootballDataSource(env.FOOTBALL_DATA_KEY, fetch, 6500, env.STATS_CSV === 'non' ? undefined : new StatsCsv())
   }
   throw new Error('SOURCE inconnue : ' + type + ' (valeurs : football-data, json, demo)')
 }
@@ -61,10 +63,13 @@ if (commande === 'batch') {
 } else if (commande === 'evaluer') {
   console.log('Fiches évaluées :', await evaluerTermines(store, source()))
 } else if (commande === 'seed') {
+  // Historique de départ : les 14 derniers jours (rétro-calcul + résultats réels) et les 6 prochains jours.
+  // Pas d'IA ici (quota) : lance ensuite `batch` pour que l'IA analyse aujourd'hui et demain.
   const s = source()
-  for (let n = -14; n <= 6; n++) await genererJour(jourDecale(n), s, store, env)
+  const sansIA = { ...env, GEMINI_API_KEY: undefined }
+  for (let n = -14; n <= 6; n++) console.log(await genererJour(jourDecale(n), s, store, sansIA))
   console.log('Fiches évaluées :', await evaluerTermines(store, s))
-  console.log('Base prête (' + (env.APEX_DB || 'apex.db') + '). Lance : npm run dev')
+  console.log('Base prête. Lance maintenant : batch')
 } else if (commande === 'serve') {
   const port = Number(env.PORT || 8787)
   creerServeur(store, { origine: env.CORS_ORIGIN || '*' }).listen(port, () => console.log('Apex back-end sur http://localhost:' + port))

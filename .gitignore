@@ -16,6 +16,7 @@ pnpm-debug.log*
 
 # Local editor and agent tooling
 .codex/
+.codex-logs/
 .impeccable/
 .agents/
 .apex-scaffold/

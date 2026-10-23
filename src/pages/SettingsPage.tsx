@@ -3,6 +3,7 @@ import { Icon } from '../components/Icon'
 import type { IconName } from '../components/Icon'
 import { PageHeader } from '../components/PageHeader'
 import { Disclaimer, SectionTitle } from '../components/ui'
+import { useAuth } from '../lib/auth'
 import { useFavoris } from '../lib/favoris'
 import { heureCourte, jourDeIso, quandLabel } from '../lib/format'
 import { usePrefs } from '../lib/prefs'
@@ -35,6 +36,7 @@ function Interrupteur({ cle, icone, titre, aide }: { cle: keyof Prefs; icone: Ic
 
 export default function SettingsPage() {
   const { favoris, retirer } = useFavoris()
+  const { utilisateur, deconnexion } = useAuth()
 
   return (
     <div className="page-body">
@@ -78,6 +80,29 @@ export default function SettingsPage() {
         </section>
 
         <div className="stack">
+          <section aria-labelledby="compte" className="stack-sm">
+            <SectionTitle id="compte">Compte</SectionTitle>
+            <div className="card state compact">
+              {utilisateur ? (
+                <>
+                  <p>
+                    Connecté avec <strong>{utilisateur.email}</strong>
+                  </p>
+                  <button type="button" className="btn btn-secondary" onClick={deconnexion}>
+                    Se déconnecter
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p>Vous utilisez Apex sans compte : tous les matchs et pronostics restent accessibles.</p>
+                  <Link to="/connexion" className="btn btn-secondary">
+                    Se connecter
+                  </Link>
+                </>
+              )}
+            </div>
+          </section>
+
           <section aria-labelledby="affichage" className="stack-sm">
             <SectionTitle id="affichage">Affichage</SectionTitle>
             <div className="card list">
@@ -96,10 +121,10 @@ export default function SettingsPage() {
                   <Icon name="down" size={18} strokeWidth={2} />
                 </summary>
                 <p>
-                  Pour chaque match, Apex estime les buts attendus de chaque équipe à partir de ses résultats récents, puis en déduit la
-                  probabilité de chaque issue, du nombre de buts et des scores. Le bonus (cartons, corners, fautes ou hors-jeu) n'apparaît
-                  que lorsqu'un signal est net. Une synthèse écrite par une IA explique ces chiffres sans les modifier. Les pourcentages sont
-                  des estimations, pas des certitudes.
+                  Pour chaque match, Apex estime les buts attendus de chaque équipe à partir de ses 5 derniers matchs (toutes compétitions confondues), puis en déduit la
+                  probabilité de chaque issue, du nombre de buts et du score exact le plus probable. Il y a toujours un pronostic ; quand une équipe a peu de matchs récents, il est signalé comme plus fragile. Le bonus (cartons, corners, fautes ou hors-jeu) n'apparaît
+                  que lorsqu'un signal est net. Une IA choisit ensuite, parmi les options calculées, le pronostic de chaque pilier et explique son raisonnement ; elle ne
+                  modifie pas les pourcentages. Ce sont des estimations, pas des certitudes.
                 </p>
               </details>
               <details className="about">

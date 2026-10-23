@@ -137,9 +137,9 @@ export function BonusCard({ p, delai }: { p: PronosticBonus | null; delai: numbe
 
 export function ScoresCard({ scores, delai }: { scores: PronosticScore[]; delai: number }) {
   return (
-    <PillarShell icone="sparkle" ton="am" kicker="4 · Coup de poker" titre="Scores les plus probables" delai={delai}>
+    <PillarShell icone="sparkle" ton="am" kicker="4 · Coup de poker" titre="Score le plus probable" delai={delai}>
       <div className="scores">
-        {scores.map((s, i) => (
+        {scores.slice(0, 1).map((s, i) => (
           <div className="score-row" key={s.score}>
             <span className="score-label tn">{s.score}</span>
             <ProbBar valeur={s.probabilite} max={0.3} ton="am" delai={300 + delai * 120 + i * 100} />
@@ -149,7 +149,7 @@ export function ScoresCard({ scores, delai }: { scores: PronosticScore[]; delai:
         ))}
       </div>
       <Pied niveau="eleve" gauche={null} />
-      <p className="pillar-note">Un score exact sort rarement, même le plus probable. À prendre comme un pari de fantaisie.</p>
+      <p className="pillar-note">Un score exact sort rarement, même le plus probable (souvent moins d'une fois sur six). À prendre comme un pari de fantaisie.</p>
     </PillarShell>
   )
 }

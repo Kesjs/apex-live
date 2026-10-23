@@ -10,6 +10,7 @@ export function jugerIssue(cle: string, d: number, e: number): boolean {
     case '2': return e > d
     case '1X': return d >= e
     case 'X2': return e >= d
+    case 'N': return d === e
     case '12': return d !== e
     default: return false
   }
@@ -61,6 +62,9 @@ export async function evaluerTermines(store: Stockage, source: Source, maintenan
   for (const ligne of lignes) {
     const reel = resultats ? (resultats.get(ligne.match_id) ?? null) : await source.resultat(ligne.match_id)
     if (!reel) continue
+    // Les stats de cartons/corners/fautes arrivent parfois avec quelques jours de retard : on patiente jusqu'à 3 jours.
+    const bonus = ligne.interne?.bonus
+    if (reel.statut === 'termine' && bonus && typeof reel.bonus?.[bonus.categorie] !== 'number' && maintenant.getTime() - Date.parse(ligne.date_heure) < 3 * 86_400_000) continue
     const res = evaluerFiche(ligne.interne, reel)
     if (!res) continue
     await store.marquerEvalue(ligne.match_id, res)

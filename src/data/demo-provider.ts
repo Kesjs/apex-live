@@ -2,6 +2,8 @@ import type {
   ApexProvider,
   CategorieBonus,
   FormeRecente,
+  StatsEquipe,
+  StatsMatch,
   Historique,
   JourHistorique,
   LettreForme,
@@ -118,6 +120,32 @@ function formeDe(r: () => number, favoriDomicile: boolean): FormeRecente {
   return { domicile: dom, exterieur: ext }
 }
 
+function statsEquipeDe(r: () => number, serie: LettreForme[], attaque: number): StatsEquipe {
+  const matchs = serie.length
+  const marques = serie.map(l => poisson(r, l === 'V' ? attaque + 0.6 : l === 'N' ? attaque : Math.max(attaque - 0.5, 0.3)))
+  const encaisses = serie.map((l, i) => (l === 'V' ? Math.min(poisson(r, 0.6), marques[i] - 1) : l === 'N' ? marques[i] : marques[i] + 1 + poisson(r, 0.5)))
+  const part = (vrai: (i: number) => boolean): number => round2(serie.filter((_, i) => vrai(i)).length / Math.max(matchs, 1))
+  const moy = (valeurs: number[]): number => round1(valeurs.reduce((a, b) => a + b, 0) / Math.max(matchs, 1))
+  return {
+    matchs,
+    buts_marques: moy(marques),
+    buts_encaisses: moy(encaisses),
+    plus_2_5: part(i => marques[i] + encaisses[i] > 2.5),
+    deux_marquent: part(i => marques[i] > 0 && encaisses[i] > 0),
+    sans_encaisser: part(i => encaisses[i] === 0),
+    derniers: [...marques.keys()].reverse().map(i => marques[i] + '-' + encaisses[i]),
+  }
+}
+
+function statsDe(r: () => number, forme: FormeRecente, attHom: number, attExt: number, butsAttendus: StatsMatch['buts_attendus']): StatsMatch {
+  return {
+    domicile: statsEquipeDe(r, forme.domicile, attHom),
+    exterieur: statsEquipeDe(r, forme.exterieur, attExt),
+    buts_attendus: butsAttendus,
+    moyenne_ligue: { buts_marques: 1.4, buts_encaisses: 1.4 },
+  }
+}
+
 function buildFiche(jour: string, index: number, dom: string, ext: string, competition: string, heure: string): Prediction {
   const id = jour + '-' + slug(dom) + '-' + slug(ext)
   const r = rng(hash(id))
@@ -192,7 +220,6 @@ function buildFiche(jour: string, index: number, dom: string, ext: string, compe
   const p2 = p1 - (0.01 + r() * 0.02)
   const scores = [
     { score: set[0], probabilite: Math.round(p1 * 1000) / 1000, cote: round2(0.9 / p1) },
-    { score: set[1], probabilite: Math.round(p2 * 1000) / 1000, cote: round2(0.9 / p2) },
   ]
 
   const pronostics: Pronostics = { issue, buts, bonus, scores }
@@ -234,12 +261,18 @@ function buildFiche(jour: string, index: number, dom: string, ext: string, compe
     }
   }
 
+  const forme = formeDe(r, favoriDomicile)
+
   return {
     ...base,
     pronostics,
     value,
     synthese,
-    forme: formeDe(r, favoriDomicile),
+    forme,
+    stats: statsDe(r, forme, favoriDomicile ? 1.6 : 1.0, favoriDomicile ? 1.0 : 1.5, {
+      domicile: round2(favoriDomicile ? 1.7 : 1.1),
+      exterieur: round2(favoriDomicile ? 0.9 : 1.4),
+    }),
     resultat,
   }
 }

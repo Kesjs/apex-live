@@ -1,14 +1,12 @@
 import type { LettreForme } from '../../../src/domain/contracts.ts'
 import type { Contexte, MatchPasse } from '../types.ts'
 
-export const NB_MATCHS = 10
-// En début de saison, certaines compétitions ne fournissent que 3 ou 4 matchs
-// terminés. Le coefficient de prudence ramène déjà ces petits échantillons vers
-// la moyenne de la ligue : trois matchs permettent donc de publier un signal
-// réel, sans inventer de données.
-export const MIN_MATCHS = 3
+export const NB_MATCHS = 5
+// Il y a toujours un pronostic : avec peu (ou pas) de matchs récents, le coefficient de prudence
+// ramène l'équipe vers la moyenne de la ligue, et la fiche est marquée « données limitées ».
+export const MIN_MATCHS = NB_MATCHS
 const DECROISSANCE = 0.88
-const PRUDENCE = 7
+const PRUDENCE = 4 // 5 matchs récents pèsent ~50 % dans l'estimation, le reste vient de la moyenne de la ligue
 
 export function recents(matchs: MatchPasse[], n = NB_MATCHS): MatchPasse[] {
   return [...matchs].sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0)).slice(0, n)

@@ -70,8 +70,8 @@ export function FeaturedMatch({ fiche }: { fiche: Prediction }) {
           </p>
         </div>
         <div className="tile">
-          <p className="kicker">4 · Scores</p>
-          <p className="tile-value tn">{p.scores.slice(0, 2).map(s => s.score).join(' · ')}</p>
+          <p className="kicker">4 · Score</p>
+          <p className="tile-value tn">{p.scores[0]?.score ?? '—'}</p>
           <p className="tile-foot">
           <Risque niveau="eleve" />
           </p>

@@ -16,6 +16,25 @@ import type { Historique, Prediction } from '../../src/domain/contracts.ts'
 
 const NOW = new Date('2026-10-11T12:00:00Z')
 
+test('Rétro-calcul : aucun appel IA même si une clé Gemini est configurée', async () => {
+  const store = new Store()
+  const source = new DemoSource({ maintenant: () => NOW })
+  const originalFetch = globalThis.fetch
+  let appels = 0
+  globalThis.fetch = async () => {
+    appels++
+    throw new Error('Aucun appel réseau attendu')
+  }
+  try {
+    const bilan = await genererJour('2026-10-05', source, store, { GEMINI_API_KEY: 'test' }, NOW)
+    assert.ok(bilan.avecPronostics > 0)
+    assert.equal(appels, 0)
+    assert.ok((await store.parJour('2026-10-05')).every(f => f.meta.retrocalcul))
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
 test('Règles d’évaluation', () => {
   assert.equal(jugerIssue('1X', 1, 1), true)
   assert.equal(jugerIssue('1', 1, 1), false)
@@ -107,5 +126,5 @@ test('Source JSON : lit rencontres, contextes et résultats', async () => {
   const store = new Store()
   const bilan = await genererJour('2026-10-12', s, store, {}, NOW)
   assert.equal(bilan.avecPronostics, 1)
-  assert.equal((await store.parId('j1'))?.pronostics?.scores.length, 3)
+  assert.equal((await store.parId('j1'))?.pronostics?.scores.length, 1)
 })

@@ -39,7 +39,7 @@ Exemple de cron (serveur configuré sur le fuseau Africa/Porto-Novo) :
 
 | Fichier | Rôle |
 |---|---|
-| `force.ts` | Force d'attaque/défense de chaque équipe à partir de ses 10 derniers matchs (les récents comptent plus), ramenée vers la moyenne de la ligue quand il y a peu de matchs → buts attendus de chaque équipe |
+| `force.ts` | Force d'attaque/défense de chaque équipe à partir de ses 5 derniers matchs, toutes compétitions confondues (les récents comptent plus), ramenée vers la moyenne de la ligue quand il y a peu de matchs → buts attendus de chaque équipe |
 | `poisson.ts` | Loi de Poisson → matrice de tous les scores → probabilités (victoire, nul, plus/moins de buts, les deux marquent, scores exacts) |
 | `marches.ts` | Choisit **Issue** (victoire si ≥ 62 %, sinon double chance) et **Buts** (marché le plus probable, en écartant les cotes < 1,15) ; propose 3 **scores** |
 | `bonus.ts` | **Bonus** (cartons, corners, fautes, hors-jeu) : retenu seulement si les deux équipes sont ≥ 12 % au-dessus de la moyenne de la ligue et que la ligne est franchie dans ≥ 70 % des matchs ; sinon `null` |

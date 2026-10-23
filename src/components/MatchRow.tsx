@@ -73,7 +73,7 @@ function Pronos({ fiche, filtre }: { fiche: Prediction; filtre: Filtre }) {
   if (filtre === 'scores') {
     return (
       <>
-        {p.scores.slice(0, 2).map(s => (
+        {p.scores.slice(0, 1).map(s => (
           <Chip key={s.score} ton="am">
             {s.score} · {pct(s.probabilite, 1)}
           </Chip>

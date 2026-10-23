@@ -144,5 +144,5 @@ export const pilierLabel: Record<PilierId, string> = {
   issue: 'Issue',
   buts: 'Buts',
   bonus: 'Bonus',
-  scores: 'Scores',
+  scores: 'Score',
 }

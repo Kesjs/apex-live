@@ -9,6 +9,9 @@ import MatchesPage from './pages/MatchesPage'
 import MatchPage from './pages/MatchPage'
 import SettingsPage from './pages/SettingsPage'
 import NewsPage from './pages/NewsPage'
+import AuthPage from './pages/AuthPage'
+import WelcomePage from './pages/WelcomePage'
+import { AuthProvider, useAuth } from './lib/auth'
 import { DayProvider } from './lib/day'
 import { PrefsProvider } from './lib/prefs'
 import { Link, RouterProvider, useRouter } from './lib/router'
@@ -127,14 +130,35 @@ function Shell() {
   )
 }
 
+/** Écrans plein page (bienvenue, connexion) ; la première visite passe par la bienvenue, mais on peut toujours continuer sans compte. */
+function Racine() {
+  const { path, navigate } = useRouter()
+  const { utilisateur, vu } = useAuth()
+  const premiereVisite = path === '/' && !vu && !utilisateur
+
+  useEffect(() => {
+    if (premiereVisite) navigate('/bienvenue', { replace: true })
+  }, [premiereVisite, navigate])
+
+  if (path === '/bienvenue') return <WelcomePage />
+  if (path === '/connexion') return <AuthPage mode="connexion" />
+  if (path === '/inscription') return <AuthPage mode="inscription" />
+  if (premiereVisite) return null
+  return (
+    <DayProvider>
+      <Shell />
+    </DayProvider>
+  )
+}
+
 export default function App() {
   return (
     <PrefsProvider>
-      <RouterProvider>
-        <DayProvider>
-          <Shell />
-        </DayProvider>
-      </RouterProvider>
+      <AuthProvider>
+        <RouterProvider>
+          <Racine />
+        </RouterProvider>
+      </AuthProvider>
     </PrefsProvider>
   )
 }

@@ -5,7 +5,7 @@ import { NB_MATCHS, recents } from './force.ts'
 
 const ECART_MIN = 0.12 // au moins 12 % au-dessus de la moyenne de la ligue
 const TAUX_MIN = 0.7 // et la ligne doit avoir été dépassée dans au moins 70 % des matchs
-const ECHANTILLON_MIN = 8
+const ECHANTILLON_MIN = 6
 const NOM: Record<CategorieBonus, string> = { cartons: 'cartons', corners: 'corners', fautes: 'fautes', 'hors-jeu': 'hors-jeu' }
 const TITRE: Record<CategorieBonus, string> = { cartons: 'Cartons', corners: 'Corners', fautes: 'Fautes', 'hors-jeu': 'Hors-jeu' }
 const r1 = (n: number): number => Math.round(n * 10) / 10

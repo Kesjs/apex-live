@@ -1,0 +1,7 @@
+.env
+.env.*
+backend/.env
+backend/.env.*
+.codex-logs/
+.agents/
+.codex/

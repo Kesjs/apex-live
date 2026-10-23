@@ -1,5 +1,6 @@
 import type { Prediction } from '../domain/contracts'
 import type { Filtre } from '../components/MatchRow'
+import { trierCompetitions } from './competitions'
 
 /** Meilleure fiche du jour pour la vedette : celle dont issue + buts sont les plus probables. */
 export function vedette(fiches: Prediction[]): Prediction | null {
@@ -39,7 +40,7 @@ export function parCompetition(fiches: Prediction[]): Array<[string, Prediction[
     liste.push(fiche)
     groupes.set(fiche.competition, liste)
   }
-  return [...groupes.entries()]
+  return trierCompetitions([...groupes.entries()])
 }
 
 /** Les n pronostics « buts » les plus probables du jour. */

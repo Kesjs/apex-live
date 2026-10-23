@@ -1,5 +1,6 @@
 import type { Contexte, Source } from './types.ts'
 import { construireFiche } from './engine/fiche.ts'
+import { analyserMatch } from './engine/analyse.ts'
 import { produireSynthese } from './engine/synthese.ts'
 import type { Stockage } from './store.ts'
 
@@ -23,6 +24,8 @@ export async function genererJour(
   env: Record<string, string | undefined> = {},
   maintenant: Date = new Date(),
 ): Promise<BilanJour> {
+  // Un jour déjà passé = rétro-calcul : sans IA, avec uniquement les données antérieures au match.
+  const retro = jour < maintenant.toISOString().slice(0, 10)
   const rencontres = await source.rencontres(jour)
   const contextes = new Map<string, Contexte>()
   const bilan: BilanJour = { jour, rencontres: rencontres.length, avecPronostics: 0, sansPronostics: 0, ignores: 0, erreurs: [] }
@@ -36,15 +39,20 @@ export async function genererJour(
     try {
       let ctx = contextes.get(r.competition)
       if (!ctx) {
-        ctx = await source.contexte(r.competition)
+        ctx = await source.contexte(r.competition, jour)
         contextes.set(r.competition, ctx)
       }
-      const { fiche, interne } = construireFiche(r, ctx, source, maintenant)
-      if (fiche.pronostics) {
-        fiche.synthese = await produireSynthese(fiche, env)
+      let sortie = construireFiche(r, ctx, source, maintenant)
+      if (retro) sortie.fiche.meta.retrocalcul = true
+      if (sortie.fiche.pronostics) {
+        // L'IA choisit et rédige ; si elle échoue ou est refusée par les contrôles, on garde le moteur.
+        const ia = retro ? null : await analyserMatch(r, ctx, sortie, env)
+        if (ia) sortie = ia
+        else sortie.fiche.synthese = await produireSynthese(sortie.fiche, retro ? { ...env, GEMINI_API_KEY: undefined } : env)
+        if (env.GEMINI_API_KEY && !retro) await new Promise(ok => setTimeout(ok, Number(env.GEMINI_PAUSE_MS ?? 6500)))
         bilan.avecPronostics++
       } else bilan.sansPronostics++
-      await store.enregistrer(jour, fiche, interne)
+      await store.enregistrer(jour, sortie.fiche, sortie.interne)
     } catch (e) {
       // Un match en erreur ne doit pas bloquer les autres.
       bilan.erreurs.push(r.match_id + ' : ' + (e as Error).message)

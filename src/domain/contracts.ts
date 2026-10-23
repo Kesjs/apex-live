@@ -66,7 +66,7 @@ export interface Pronostics {
   buts: PronosticButs
   /** null = aucun signal assez net pour proposer un bonus. */
   bonus: PronosticBonus | null
-  /** 2 à 3 scores, du plus probable au moins probable. */
+  /** Le score exact le plus probable (un seul élément). */
   scores: PronosticScore[]
 }
 
@@ -85,6 +85,10 @@ export interface MetaFiche {
   source_cotes: string
   /** Moment où les cotes ont été relevées (ISO 8601). */
   cotes_observees_le?: string
+  /** true = fiche calculée après coup, avec uniquement les données antérieures au match (historique de départ). */
+  retrocalcul?: boolean
+  /** true = au moins une équipe a moins de 5 matchs récents : pronostic donné, mais plus fragile. */
+  donnees_limitees?: boolean
 }
 
 export interface ResultatFiche {
@@ -96,6 +100,27 @@ export interface ResultatFiche {
   score: boolean | null
   /** Score final, ex. « 2-1 ». */
   score_final?: string
+}
+
+/** Statistiques utiles d'une équipe sur ses derniers matchs (5 au plus). Les parts vont de 0 à 1. */
+export interface StatsEquipe {
+  matchs: number
+  buts_marques: number
+  buts_encaisses: number
+  plus_2_5: number
+  deux_marquent: number
+  sans_encaisser: number
+  /** Derniers scores, du plus récent au plus ancien, ex. « 2-1 » (buts de l'équipe en premier). */
+  derniers: string[]
+}
+
+export interface StatsMatch {
+  domicile: StatsEquipe
+  exterieur: StatsEquipe
+  /** Buts attendus par le modèle pour cette rencontre. */
+  buts_attendus: { domicile: number; exterieur: number }
+  /** Moyenne de la compétition par équipe et par match, pour situer les chiffres. Facultatif. */
+  moyenne_ligue?: { buts_marques: number; buts_encaisses: number }
 }
 
 export interface FormeRecente {
@@ -120,6 +145,7 @@ export interface Prediction {
   /** Synthèse rédigée (2 à 3 phrases). */
   synthese?: string
   forme?: FormeRecente
+  stats?: StatsMatch
   meta: MetaFiche
   resultat: ResultatFiche
 }

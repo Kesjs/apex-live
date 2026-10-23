@@ -6,7 +6,7 @@ import { PageHeader } from '../components/PageHeader'
 import { ResultMark } from '../components/ResultMark'
 import { ListSkeleton } from '../components/Skeletons'
 import { Compteur, Disclaimer, EmptyState, ErrorState, ProbBar, SectionTitle } from '../components/ui'
-import { quandLabel } from '../lib/format'
+import { pct, quandLabel } from '../lib/format'
 import { Link } from '../lib/router'
 import { useAsync } from '../lib/useAsync'
 
@@ -17,7 +17,7 @@ const PERIODES: Array<[PeriodeHistorique, string]> = [
 ]
 
 const PILIERS: PilierId[] = ['issue', 'buts', 'bonus', 'scores']
-const NOMS: Record<PilierId, string> = { issue: 'Issue du match', buts: 'Nombre de buts', bonus: 'Bonus', scores: 'Scores exacts' }
+const NOMS: Record<PilierId, string> = { issue: 'Issue du match', buts: 'Nombre de buts', bonus: 'Bonus', scores: 'Score exact' }
 const PAR_PAGE = 3
 
 export default function HistoryPage() {
@@ -74,6 +74,38 @@ export default function HistoryPage() {
               </p>
             </div>
           </section>
+
+          {(() => {
+            // Fiabilité : probabilité annoncée en moyenne, comparée à la réussite réelle (les deux sur les mêmes matchs).
+            const evalues = etat.data.jours.flatMap(j => j.matchs).filter(f => f.pronostics && f.resultat.statut === 'evalue')
+            const ligne = (nom: string, annoncee: (f: (typeof evalues)[number]) => number, reel: (f: (typeof evalues)[number]) => boolean | null) => {
+              const lots = evalues.filter(f => reel(f) !== null)
+              if (lots.length < 5) return null
+              const a = lots.reduce((s, f) => s + annoncee(f), 0) / lots.length
+              const r = lots.filter(f => reel(f) === true).length / lots.length
+              return (
+                <div className="stat-row" key={nom}>
+                  <strong>{pct(a)}</strong>
+                  <span>{nom}</span>
+                  <strong>{pct(r)}</strong>
+                </div>
+              )
+            }
+            const lignes = [ligne('Issue du match', f => f.pronostics!.issue.probabilite, f => f.resultat.issue), ligne('Nombre de buts', f => f.pronostics!.buts.probabilite, f => f.resultat.buts)].filter(Boolean)
+            if (lignes.length === 0) return null
+            return (
+              <section aria-labelledby="fiabilite" className="stack-sm">
+                <SectionTitle id="fiabilite">Le modèle tient-il ses promesses ?</SectionTitle>
+                <div className="card data-card">
+                  <div className="stat-table">
+                    <div className="stat-row stat-head"><span>Annoncé</span><span>Pronostic</span><span>Réel</span></div>
+                    {lignes}
+                  </div>
+                  <p className="muted small">Si « annoncé » est nettement au-dessus de « réel », le modèle est trop optimiste. Calculé sur les matchs de la période.</p>
+                </div>
+              </section>
+            )
+          })()}
 
           <section aria-labelledby="recents" className="stack-sm">
             <SectionTitle id="recents">Derniers résultats</SectionTitle>

@@ -43,7 +43,7 @@ export function choisirIssue(
   return { pronostic, cle }
 }
 
-interface CandidatButs {
+export interface CandidatButs {
   cle: string
   selection: string
   court: string
@@ -53,7 +53,7 @@ interface CandidatButs {
 
 const total = (x: MatchPasse): number => x.buts_pour + x.buts_contre
 
-const CANDIDATS: CandidatButs[] = [
+export const CANDIDATS: CandidatButs[] = [
   { cle: 'O1.5', selection: 'Plus de 1,5 but', court: '+1.5', proba: m => plusDe(m, 1.5), vrai: x => total(x) > 1.5 },
   { cle: 'O2.5', selection: 'Plus de 2,5 buts', court: '+2.5', proba: m => plusDe(m, 2.5), vrai: x => total(x) > 2.5 },
   { cle: 'U2.5', selection: 'Moins de 2,5 buts', court: '-2.5', proba: m => 1 - plusDe(m, 2.5), vrai: x => total(x) < 2.5 },
@@ -79,7 +79,7 @@ export function choisirButs(m: Matrice, dom: MatchPasse[], ext: MatchPasse[], co
 }
 
 export function choisirScores(m: Matrice, cotes: Cotes): PronosticScore[] {
-  return meilleursScores(m, 3).map(s => {
+  return meilleursScores(m, 1).map(s => {
     const out: PronosticScore = { score: s.score, probabilite: r2(s.probabilite) }
     const c = cotes['score:' + s.score]
     if (c !== undefined) out.cote = c

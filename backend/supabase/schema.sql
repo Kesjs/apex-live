@@ -52,3 +52,11 @@ create table if not exists public.actualites (
 create index if not exists actualites_date_idx on public.actualites (publie_le desc);
 alter table public.actualites enable row level security;
 revoke all on table public.actualites from anon, authenticated;
+
+-- Lecture publique (voir lecture-publique.sql) : fiches et actualités lisibles par l'app, sans la colonne `interne`.
+drop policy if exists fiches_lecture_publique on public.fiches;
+create policy fiches_lecture_publique on public.fiches for select to anon, authenticated using (true);
+grant select (match_id, jour, date_heure, fiche, evalue) on public.fiches to anon, authenticated;
+drop policy if exists actualites_lecture_publique on public.actualites;
+create policy actualites_lecture_publique on public.actualites for select to anon, authenticated using (true);
+grant select (id, categorie, article, publie_le) on public.actualites to anon, authenticated;

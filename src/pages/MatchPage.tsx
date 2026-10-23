@@ -2,13 +2,17 @@ import { useEffect, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { provider } from '../data'
 import type { Prediction } from '../domain/contracts'
+import { BandeauPronostic } from '../components/BandeauPronostic'
 import { Crest } from '../components/Crest'
+import { FaitsDuMatch } from '../components/FaitsDuMatch'
 import { FormStrip } from '../components/FormStrip'
 import { Icon } from '../components/Icon'
 import { KickoffCountdown } from '../components/KickoffCountdown'
+import { PlusMoins } from '../components/PlusMoins'
 import { BonusCard, ButsCard, IssueCard, ScoresCard } from '../components/PillarCards'
 import { ResultMark } from '../components/ResultMark'
 import { DetailSkeleton } from '../components/Skeletons'
+import { StatsComparees } from '../components/StatsComparees'
 import { Chip, Disclaimer, EmptyState, ErrorState, SectionTitle } from '../components/ui'
 import { useFavoris } from '../lib/favoris'
 import { heureCourte, jourDeFiche, quandLabel } from '../lib/format'
@@ -73,6 +77,8 @@ function Fiche({ fiche, retour }: { fiche: Prediction; retour: string }) {
             <KickoffCountdown iso={fiche.date_heure} />
           </Chip>
         )}
+        {fiche.meta.donnees_limitees && <Chip ton="am">Peu de matchs récents : pronostic plus fragile</Chip>}
+        {fiche.meta.retrocalcul && <Chip ton="muet">Rétro-calcul : données d'avant le match</Chip>}
         {cotes && fiche.meta.cotes_observees_le && <Chip ton="muet">Cotes de {heureCourte(fiche.meta.cotes_observees_le)}</Chip>}
       </div>
 
@@ -91,6 +97,8 @@ function Fiche({ fiche, retour }: { fiche: Prediction; retour: string }) {
 
       {onglet === 'apercu' && <div className="detail-grid">
         <div className="stack">
+          <BandeauPronostic fiche={fiche} />
+
           {fiche.synthese && (
             <section className="card synthese rise" aria-labelledby="synthese">
               <div className="synthese-head">
@@ -160,25 +168,38 @@ function Fiche({ fiche, retour }: { fiche: Prediction; retour: string }) {
 
       {onglet === 'statistiques' && <section className="detail-grid">
         <div className="stack">
-          <section className="card data-card" aria-labelledby="stats-equipes">
-            <SectionTitle id="stats-equipes">Indicateurs du match</SectionTitle>
-            <div className="stat-table">
-              <div className="stat-row stat-head"><span>{fiche.equipes.domicile}</span><span>Indicateur</span><span>{fiche.equipes.exterieur}</span></div>
-              <div className="stat-row"><strong>{p ? Math.round((p.issue.probabilite + (p.buts.probabilite ?? 0)) * 50) : '—'} %</strong><span>Confiance moyenne</span><strong>{p ? Math.round((p.issue.probabilite + (p.buts.probabilite ?? 0)) * 45) : '—'} %</strong></div>
-              <div className="stat-row"><strong>{fiche.forme?.domicile.filter(x => x === 'V').length ?? '—'}</strong><span>Victoires récentes</span><strong>{fiche.forme?.exterieur.filter(x => x === 'V').length ?? '—'}</strong></div>
-              <div className="stat-row"><strong>{p ? p.scores[0]?.score ?? '—' : '—'}</strong><span>Score le plus probable</span><strong>{p ? p.scores[1]?.score ?? '—' : '—'}</strong></div>
-            </div>
-          </section>
-          <section className="card side-card"><h2>Données utilisées</h2><p className="muted small">Les statistiques servent à construire les probabilités. Elles ne constituent pas une garantie de résultat.</p></section>
+          {fiche.stats ? (
+            <>
+              <StatsComparees fiche={fiche} />
+              <PlusMoins fiche={fiche} />
+            </>
+          ) : (
+            <section className="card state state-compact" role="status">
+              <span className="state-icon"><Icon name="info" size={22} /></span>
+              <p>Statistiques détaillées indisponibles pour ce match.</p>
+            </section>
+          )}
+          <section className="card side-card"><h2>Données utilisées</h2><p className="muted small">Statistiques calculées sur les 5 derniers matchs de chaque équipe, toutes compétitions confondues. Elles servent à construire les probabilités et ne garantissent aucun résultat.</p></section>
         </div>
         <aside className="stack">{fiche.forme ? <FormStrip forme={fiche.forme} domicile={fiche.equipes.domicile} exterieur={fiche.equipes.exterieur} /> : <div className="card state state-compact"><span className="state-icon"><Icon name="info" size={22} /></span><p>Forme récente indisponible.</p></div>}</aside>
       </section>}
 
-      {onglet === 'avant' && <section className="card state" role="status">
-        <span className="state-icon"><Icon name="clock" size={24} /></span>
-        <h2>Informations avant-match</h2>
-        <p>Les compositions probables, absences et contexte du match seront affichés ici lorsqu’ils seront disponibles dans les données connectées.</p>
-      </section>}
+      {onglet === 'avant' && (
+        <section className="stack">
+          <FaitsDuMatch fiche={fiche} />
+          {fiche.forme ? (
+            <section aria-labelledby="forme-avant" className="stack-sm">
+              <SectionTitle id="forme-avant">Forme récente</SectionTitle>
+              <FormStrip forme={fiche.forme} domicile={fiche.equipes.domicile} exterieur={fiche.equipes.exterieur} />
+            </section>
+          ) : (
+            <section className="card state state-compact" role="status">
+              <span className="state-icon"><Icon name="info" size={22} /></span>
+              <p>Pas assez de matchs récents pour établir des faits marquants.</p>
+            </section>
+          )}
+        </section>
+      )}
 
       {onglet === 'apres' && <section className="card state" role="status">
         <span className="state-icon"><Icon name={r.statut === 'evalue' ? 'check' : 'clock'} size={24} /></span>

@@ -36,7 +36,7 @@ test('Équipes identiques : le domicile garde un léger avantage', () => {
 })
 
 test('Peu de matchs : on reste proche de la moyenne de la ligue (pas d’emballement)', () => {
-  const trop = butsAttendus(matchs(5, 5, 0), matchs(5, 0, 3), ctx)
+  const trop = butsAttendus(matchs(2, 5, 0), matchs(2, 0, 3), ctx)
   assert.ok(trop.lh < 4.5 && trop.la > 0.3) // sans prudence, on aurait plus de 10 buts attendus
 })
 
@@ -60,7 +60,7 @@ test('Bonus : aucun signal → null ; signal net → cartons', () => {
 })
 
 test('Bonus : pas assez de données → null', () => {
-  const peu = matchs(3, 1, 1, { cartons: 9, corners: 10, fautes: 24, 'hors-jeu': 4 })
+  const peu = matchs(2, 1, 1, { cartons: 9, corners: 10, fautes: 24, 'hors-jeu': 4 })
   assert.equal(choisirBonus(peu, peu, ctx, {}), null)
 })
 
@@ -79,19 +79,24 @@ test('Value : seuil minimum et plafond de suspicion', () => {
   assert.equal(valeur([{ pilier: 'buts', cle: 'O1.5', probabilite: 0.95 }], c), null) // écart 0.28 : suspect
 })
 
-test('Fiche : données insuffisantes → pas de pronostic, avec raison', () => {
-  const { fiche, interne } = construireFiche(rencontre(matchs(2, 1, 1), matchs(10, 1, 1)), ctx, { nom: 's', nomCotes: 'c' })
-  assert.equal(fiche.pronostics, null)
-  assert.ok(fiche.raison_absence)
-  assert.equal(interne, null)
+test('Fiche : peu de matchs (ou aucun) → il y a quand même un pronostic, signalé « données limitées »', () => {
+  for (const peu of [matchs(2, 1, 1), []]) {
+    const { fiche, interne } = construireFiche(rencontre(peu, matchs(5, 1, 1)), ctx, { nom: 's', nomCotes: 'c' })
+    assert.ok(fiche.pronostics)
+    assert.equal(fiche.pronostics.scores.length, 1)
+    assert.equal(fiche.meta.donnees_limitees, true)
+    assert.ok(interne)
+  }
+  const complet = construireFiche(rencontre(matchs(5, 1, 1), matchs(5, 1, 1)), ctx, { nom: 's', nomCotes: 'c' })
+  assert.equal(complet.fiche.meta.donnees_limitees, undefined)
 })
 
-test('Fiche : respecte le contrat (4 piliers, 3 scores, probabilités entre 0 et 1)', () => {
+test('Fiche : respecte le contrat (4 piliers, 1 score, probabilités entre 0 et 1)', () => {
   const { fiche, interne } = construireFiche(rencontre(matchs(10, 2, 0), matchs(10, 0, 2), { '1': 1.4, N: 4.5, '2': 8 }), ctx, { nom: 's', nomCotes: 'c' })
   const p = fiche.pronostics!
   assert.equal(p.issue.court, '1')
   assert.equal(p.issue.cote, 1.4)
-  assert.equal(p.scores.length, 3)
+  assert.equal(p.scores.length, 1)
   for (const x of [p.issue.probabilite, p.buts.probabilite, ...p.scores.map(s => s.probabilite)]) assert.ok(x > 0 && x < 1)
   assert.equal(fiche.forme?.domicile.length, 5)
   assert.equal(fiche.resultat.statut, 'non_evalue')
@@ -115,7 +120,7 @@ test('Synthèse : Gemini utilisé si valide, repli sans IA sinon (et si l’appe
   const reponse = (texte: string) => (async () => new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: texte }] } }] }))) as typeof fetch
   const valide = 'Alpha domine ses derniers matchs, et le modèle retient ce choix à ' + pct + ' %. Beta manque de régularité en ce moment.'
   assert.equal(await produireSynthese(fiche, { GEMINI_API_KEY: 'k' }, reponse(valide)), valide)
-  const invente = 'Alpha domine ses derniers matchs avec 83 buts marqués cette saison. Beta manque de régularité en ce moment.'
+  const invente = 'Alpha domine ses derniers matchs avec 412 buts marqués cette saison. Beta manque de régularité en ce moment.'
   assert.equal(await produireSynthese(fiche, { GEMINI_API_KEY: 'k' }, reponse(invente)), syntheseModele(fiche))
   const panne = (async () => { throw new Error('réseau') }) as typeof fetch
   assert.equal(await produireSynthese(fiche, { GEMINI_API_KEY: 'k' }, panne), syntheseModele(fiche))

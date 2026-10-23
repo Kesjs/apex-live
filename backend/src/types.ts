@@ -62,7 +62,8 @@ export interface Source {
   readonly nom: string
   readonly nomCotes: string
   rencontres(jour: string): Promise<Rencontre[]>
-  contexte(competition: string): Promise<Contexte>
+  /** `jour` (AAAA-MM-JJ) : n'utiliser que les matchs antérieurs à ce jour (rétro-calcul sans triche). */
+  contexte(competition: string, jour?: string): Promise<Contexte>
   resultat(matchId: string): Promise<ResultatReel | null>
   /** Variante groupée facultative, utilisée pour économiser les appels API. */
   resultats?(matchIds: string[]): Promise<Map<string, ResultatReel>>
