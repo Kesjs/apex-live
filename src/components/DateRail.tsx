@@ -4,13 +4,14 @@ import { addDays, jourCourtLabel, jourLongLabel, jourNumero, todayISO } from '..
 type DateRailProps = {
   jour: string
   onChange: (jour: string) => void
+  /** Nombre de jours affichés à partir d'aujourd'hui (aujourd'hui compris). */
   nombre?: number
   /** Nombre de jours passés affichés avant aujourd'hui. */
   avant?: number
 }
 
-/** Sélecteur de jour : avant-hier, hier et aujourd'hui. Les matchs à venir ne sont pas affichés. */
-export function DateRail({ jour, onChange, nombre = 1, avant = 2 }: DateRailProps) {
+/** Sélecteur de jour : avant-hier, hier, aujourd'hui, puis les 2 jours suivants (5 jours au total). */
+export function DateRail({ jour, onChange, nombre = 3, avant = 2 }: DateRailProps) {
   const aujourdhui = todayISO()
   const jours = Array.from({ length: nombre + avant }, (_, i) => addDays(aujourdhui, i - avant))
   const rail = useRef<HTMLDivElement>(null)

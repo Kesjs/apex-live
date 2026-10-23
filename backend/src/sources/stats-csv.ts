@@ -175,6 +175,13 @@ export class StatsCsv {
     this.fetcher = fetcher
   }
 
+  /** Nombre de matchs lus dans les CSV (toutes divisions). */
+  get nbLignes(): number {
+    let n = 0
+    for (const l of this.lignes.values()) n += l.length
+    return n
+  }
+
   get aDesCotes(): boolean {
     return this.cotesTrouvees
   }

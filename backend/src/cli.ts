@@ -21,6 +21,9 @@ function creerStockage(): Stockage {
 }
 const store = creerStockage()
 
+// Gardé pour pouvoir afficher dans les logs si le complément CSV (bonus, cotes) a bien été téléchargé.
+let csvUtilise: StatsCsv | undefined
+
 function source(): Source {
   const type = env.SOURCE || 'demo'
   if (type === 'demo') return new DemoSource()
@@ -31,7 +34,8 @@ function source(): Source {
   if (type === 'football-data') {
     if (!env.FOOTBALL_DATA_KEY) throw new Error('SOURCE=football-data demande FOOTBALL_DATA_KEY.')
     // STATS_CSV=non désactive le complément gratuit (cartons, corners, fautes, cotes).
-    return new FootballDataSource(env.FOOTBALL_DATA_KEY, fetch, 6500, env.STATS_CSV === 'non' ? undefined : new StatsCsv())
+    csvUtilise = env.STATS_CSV === 'non' ? undefined : new StatsCsv()
+    return new FootballDataSource(env.FOOTBALL_DATA_KEY, fetch, 6500, csvUtilise)
   }
   throw new Error('SOURCE inconnue : ' + type + ' (valeurs : football-data, json, demo)')
 }
@@ -45,8 +49,8 @@ function jourDecale(n: number): string {
 const [commande = 'serve', argument] = process.argv.slice(2)
 
 if (commande === 'batch') {
-  // Sans argument : aujourd'hui et demain. Avec une date AAAA-MM-JJ : ce jour seulement.
-  const jours = argument ? [argument] : [jourDecale(0), jourDecale(1)]
+  // Sans argument : aujourd'hui, demain et après-demain. Avec une date AAAA-MM-JJ : ce jour seulement.
+  const jours = argument ? [argument] : [jourDecale(0), jourDecale(1), jourDecale(2)]
   const s = source()
   for (const j of jours) console.log(await genererJour(j, s, store, env))
   if (env.THE_NEWS_API_KEY) {
@@ -55,6 +59,10 @@ if (commande === 'batch') {
     console.log('Actualités synchronisées :', articles.length)
   }
   console.log('Fiches évaluées :', await evaluerTermines(store, s))
+  if (csvUtilise) {
+    if (csvUtilise.erreurs.length) console.warn('ATTENTION — CSV cartons/corners/fautes/cotes non téléchargé(s), donc pas de bonus :\n' + csvUtilise.erreurs.join('\n'))
+    else console.log('CSV cartons/corners/fautes/cotes : téléchargés (' + csvUtilise.nbLignes + ' lignes).')
+  }
 } else if (commande === 'actualites') {
   if (!env.THE_NEWS_API_KEY) throw new Error('THE_NEWS_API_KEY est obligatoire pour actualites.')
   const articles = await new TheNewsApiSource(env.THE_NEWS_API_KEY).actualites()
@@ -64,7 +72,7 @@ if (commande === 'batch') {
   console.log('Fiches évaluées :', await evaluerTermines(store, source()))
 } else if (commande === 'seed') {
   // Historique de départ : les 14 derniers jours (rétro-calcul + résultats réels) et les 6 prochains jours.
-  // Pas d'IA ici (quota) : lance ensuite `batch` pour que l'IA analyse aujourd'hui et demain.
+  // Pas d'IA ici (quota) : lance ensuite `batch` pour que l'IA analyse aujourd'hui, demain et après-demain.
   const s = source()
   const sansIA = { ...env, GEMINI_API_KEY: undefined }
   for (let n = -14; n <= 6; n++) console.log(await genererJour(jourDecale(n), s, store, sansIA))

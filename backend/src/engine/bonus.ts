@@ -3,8 +3,9 @@ import type { CategorieBonus, Contexte, MatchPasse, Cotes } from '../types.ts'
 import { CATEGORIES } from '../types.ts'
 import { NB_MATCHS, recents } from './force.ts'
 
-const ECART_MIN = 0.12 // au moins 12 % au-dessus de la moyenne de la ligue
-const TAUX_MIN = 0.7 // et la ligne doit avoir été dépassée dans au moins 70 % des matchs
+const ECART_MIN = 0.05 // au moins 5 % au-dessus de la moyenne de la ligue
+const TAUX_MIN = 0.6 // et la ligne doit avoir été dépassée dans au moins 60 % des matchs
+const MARGE_LIGNE = 1.5 // la ligne se place 1,5 sous la moyenne observée : une ligne prudente, donc plus souvent atteinte
 const ECHANTILLON_MIN = 6
 const NOM: Record<CategorieBonus, string> = { cartons: 'cartons', corners: 'corners', fautes: 'fautes', 'hors-jeu': 'hors-jeu' }
 const TITRE: Record<CategorieBonus, string> = { cartons: 'Cartons', corners: 'Corners', fautes: 'Fautes', 'hors-jeu': 'Hors-jeu' }
@@ -33,7 +34,7 @@ export function choisirBonus(
     const obs = valeurs.reduce((a, b) => a + b, 0) / valeurs.length
     const ecart = (obs - ligue) / ligue
     if (ecart < ECART_MIN) continue
-    const ligne = Math.floor(obs) - 0.5
+    const ligne = Math.floor(obs) - MARGE_LIGNE
     if (ligne < 0.5) continue
     const depasse = valeurs.filter(v => v > ligne).length
     const taux = (depasse + 1) / (valeurs.length + 2)

@@ -53,9 +53,9 @@ test('Bonus : aucun signal → null ; signal net → cartons', () => {
   const neutre = matchs(10, 1, 1, { cartons: 4, corners: 10, fautes: 24, 'hors-jeu': 4 })
   assert.equal(choisirBonus(neutre, neutre, ctx, {}), null)
   const chaud = matchs(10, 1, 1, { cartons: 5.5, corners: 10, fautes: 24, 'hors-jeu': 4 })
-  const b = choisirBonus(chaud, chaud, ctx, { 'bonus:cartons:O4.5': 1.7 })
+  const b = choisirBonus(chaud, chaud, ctx, { 'bonus:cartons:O3.5': 1.7 })
   assert.equal(b?.categorie, 'cartons')
-  assert.equal(b?.ligne, 4.5)
+  assert.equal(b?.ligne, 3.5)
   assert.equal(b?.pronostic.cote, 1.7)
 })
 
