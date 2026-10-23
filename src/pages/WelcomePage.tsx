@@ -38,7 +38,7 @@ export default function WelcomePage() {
           <strong>Apex</strong>
         </div>
         <div className="welcome-copy">
-          <h1>Le football, c'est mieux avec des pronos qui s'expliquent.</h1>
+          <h1>Des pronostics qui s’expliquent.</h1>
           <p>Issue, buts, bonus et score exact, avec le raisonnement derrière chaque choix.</p>
           <div className="welcome-intentions" role="group" aria-label="Votre objectif">
             <p className="welcome-intention-label">Qu'est-ce qui vous intéresse le plus ?</p>

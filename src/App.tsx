@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { Icon, Logo } from './components/Icon'
 import type { IconName } from './components/Icon'
 import { EmptyState } from './components/ui'
+import { LaunchIntro } from './components/LaunchIntro'
 import HistoryPage from './pages/HistoryPage'
 import HomePage from './pages/HomePage'
 import MatchesPage from './pages/MatchesPage'
@@ -156,7 +157,7 @@ export default function App() {
     <PrefsProvider>
       <AuthProvider>
         <RouterProvider>
-          <Racine />
+          <LaunchIntro><Racine /></LaunchIntro>
         </RouterProvider>
       </AuthProvider>
     </PrefsProvider>

@@ -232,10 +232,11 @@ main {
 .dashboard-metrics div { display: flex; flex-direction: column; gap: 2px; padding: 11px; border-radius: 12px; background: var(--s2); }
 .dashboard-metrics strong { font-family: var(--display); font-size: 22px; color: var(--ac); }
 .dashboard-metrics span { font-size: 11px; color: var(--mu); }
-.welcome-intentions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 24px; }
+.welcome-intentions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 24px; }
 .welcome-intention-label { grid-column: 1 / -1; margin-bottom: 2px; font-size: 12px; color: var(--mu); }
-.welcome-intentions button { border: 1px solid var(--ln); border-radius: 10px; padding: 10px; background: rgba(255,255,255,.04); color: var(--tx); text-align: left; font: inherit; font-size: 12px; cursor: pointer; }
-.welcome-intentions button.is-selected { border-color: var(--ac); background: var(--acb); color: var(--ac); }
+.welcome-intentions button { border: 0; border-radius: 12px; padding: 14px 13px; background: rgba(255,255,255,.52); box-shadow: inset 0 0 0 1px rgba(25,70,45,.10); color: #163326; text-align: left; font: inherit; font-size: 12px; cursor: pointer; transition: transform .2s ease, background .2s ease, box-shadow .2s ease; }
+.welcome-intentions button:hover { transform: translateY(-1px); background: rgba(255,255,255,.78); }
+.welcome-intentions button.is-selected { background: #e8fff0; box-shadow: inset 0 0 0 2px #0aa66a, 0 5px 14px rgba(16,133,83,.10); color: #087b50; }
 @media(max-width:600px){.dashboard-metrics strong{font-size:18px}.dashboard-metrics span{font-size:10px}}
 
 .page {
@@ -2056,6 +2057,7 @@ body {
   letter-spacing: -0.03em;
   font-weight: 700;
 }
+.welcome-copy h1::after { content: ''; display: block; width: 42px; height: 4px; border-radius: 2px; margin: 18px auto 0; background: #0aa66a; }
 .welcome-copy p { margin-top: 18px; font-size: 17px; line-height: 1.45; color: #34413a; }
 .welcome-actions { display: flex; flex-direction: column; gap: 22px; }
 .welcome-cta {
@@ -2066,7 +2068,7 @@ body {
   min-height: 64px;
   padding: 0 28px;
   border: 0;
-  border-radius: 32px;
+  border-radius: 16px;
   background: #5fdd70;
   color: #0b1f10;
   font-family: var(--font);
@@ -2099,6 +2101,25 @@ body {
   font-size: 17px;
 }
 .auth-form .welcome-cta { margin-top: 18px; justify-content: center; }
+.auth-google { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 54px; margin-top: 24px; border: 1px solid rgba(12,50,31,.18); border-radius: 14px; background: rgba(255,255,255,.78); color: #132a1d; font: inherit; font-weight: 700; cursor: pointer; }
+.auth-google:hover:not(:disabled) { background: #fff; border-color: #0aa66a; }
+.auth-google:disabled { opacity: .55; cursor: not-allowed; }
+.google-icon { width: 22px; height: 22px; flex: none; }
+.auth-divider { display: flex; align-items: center; gap: 10px; margin: 18px 0 2px; color: #64766d; font-size: 12px; }
+.auth-divider::before,.auth-divider::after { content: ''; height: 1px; flex: 1; background: rgba(12,50,31,.15); }
+.auth-code { letter-spacing: .35em; text-align: center; font-family: var(--display); font-size: 22px; }
+@media (max-width: 519px) {
+  .welcome-inner { padding-left: 24px; padding-right: 24px; }
+  .welcome-brand { align-self: center; font-size: 20px; }
+  .welcome-copy { padding: 30px 0; text-align: center; }
+  .welcome-copy h1 { max-width: 320px; margin: 0 auto; font-size: clamp(30px, 9vw, 38px); line-height: 1.08; }
+  .welcome-copy p { max-width: 320px; margin: 16px auto 0; font-size: 15px; }
+  .welcome-intentions { text-align: left; }
+  .welcome-intention-label { text-align: center; }
+  .welcome-cta { border-radius: 14px; padding: 0 22px; }
+  .auth-title { margin-top: 32px; text-align: center; font-size: 30px; }
+  .auth-note { text-align: center; }
+}
 .auth-erreur { margin-top: 6px; color: #b3261e; font-size: 14px; font-weight: 600; }
 .auth-info { margin-top: 6px; color: #14532d; font-size: 14px; font-weight: 600; }
 .auth-skip {

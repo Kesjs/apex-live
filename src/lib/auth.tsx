@@ -85,8 +85,11 @@ type AuthValue = {
   vu: boolean
   configuree: boolean
   marquerVu: () => void
-  connexion: (email: string, mdp: string) => Promise<ResultatAuth>
-  inscription: (email: string, mdp: string) => Promise<ResultatAuth>
+  connexion: (email: string, mdp?: string) => Promise<ResultatAuth>
+  inscription: (email: string, mdp?: string) => Promise<ResultatAuth>
+  demanderCode: (email: string) => Promise<ResultatAuth>
+  verifierCode: (email: string, code: string) => Promise<ResultatAuth>
+  connexionGoogle: () => void
   deconnexion: () => void
 }
 
@@ -97,6 +100,9 @@ const AuthContext = createContext<AuthValue>({
   marquerVu: () => undefined,
   connexion: async () => ({ ok: false, erreur: 'Indisponible.' }),
   inscription: async () => ({ ok: false, erreur: 'Indisponible.' }),
+  demanderCode: async () => ({ ok: false, erreur: 'Indisponible.' }),
+  verifierCode: async () => ({ ok: false, erreur: 'Indisponible.' }),
+  connexionGoogle: () => undefined,
   deconnexion: () => undefined,
 })
 
@@ -126,6 +132,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ecrireStockage(CLE_VU, '1')
   }, [])
 
+  useEffect(() => {
+    const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''))
+    const access = hash.get('access_token')
+    const refresh = hash.get('refresh_token')
+    if (!access || !refresh) return
+    garder({ access_token: access, refresh_token: refresh, expires_at: Math.floor(Date.now() / 1000) + Number(hash.get('expires_in') ?? 3600), email: hash.get('user_email') ?? 'Compte Google' })
+    window.history.replaceState(null, '', window.location.pathname + window.location.search)
+  }, [garder])
+
   const demander = useCallback(
     async (chemin: string, email: string, mdp: string): Promise<ResultatAuth> => {
       if (!authConfiguree) return { ok: false, erreur: "La connexion n'est pas encore activée sur cette version." }
@@ -145,13 +160,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [garder],
   )
 
-  const connexion = useCallback((email: string, mdp: string) => demander('/token?grant_type=password', email, mdp), [demander])
-  const inscription = useCallback((email: string, mdp: string) => demander('/signup', email, mdp), [demander])
+  const connexion = useCallback((email: string, mdp = '') => demander('/token?grant_type=password', email, mdp), [demander])
+  const inscription = useCallback((email: string, mdp = '') => demander('/signup', email, mdp), [demander])
+  const demanderCode = useCallback(async (email: string): Promise<ResultatAuth> => {
+    if (!authConfiguree) return { ok: false, erreur: "La connexion n'est pas encore activée sur cette version." }
+    try {
+      const r = await appeler('/otp', { email: email.trim() })
+      return r.ok ? { ok: true, confirmation: true } : { ok: false, erreur: traduire(r.data.error_description ?? r.data.msg ?? r.data.message ?? '') }
+    } catch { return { ok: false, erreur: 'Impossible de joindre le serveur. Vérifiez votre connexion.' } }
+  }, [])
+  const verifierCode = useCallback(async (email: string, code: string): Promise<ResultatAuth> => {
+    if (!authConfiguree) return { ok: false, erreur: "La connexion n'est pas encore activée sur cette version." }
+    try {
+      const r = await appeler('/verify', { email: email.trim(), token: code.trim(), type: 'email' })
+      if (!r.ok) return { ok: false, erreur: traduire(r.data.error_description ?? r.data.msg ?? r.data.message ?? '') }
+      const s = versSession(r.data, email.trim())
+      if (s) garder(s)
+      return s ? { ok: true } : { ok: false, erreur: 'Le code a été accepté, mais la session n’a pas pu être ouverte.' }
+    } catch { return { ok: false, erreur: 'Impossible de joindre le serveur. Vérifiez votre connexion.' } }
+  }, [garder])
+  const connexionGoogle = useCallback(() => {
+    if (!authConfiguree) return
+    const redirect = encodeURIComponent(window.location.origin + '/')
+    window.location.assign(URL_SUPABASE + '/auth/v1/authorize?provider=google&redirect_to=' + redirect)
+  }, [])
   const deconnexion = useCallback(() => garder(null), [garder])
 
   const value = useMemo<AuthValue>(
-    () => ({ utilisateur: session ? { email: session.email } : null, vu, configuree: authConfiguree, marquerVu, connexion, inscription, deconnexion }),
-    [session, vu, marquerVu, connexion, inscription, deconnexion],
+    () => ({ utilisateur: session ? { email: session.email } : null, vu, configuree: authConfiguree, marquerVu, connexion, inscription, demanderCode, verifierCode, connexionGoogle, deconnexion }),
+    [session, vu, marquerVu, connexion, inscription, demanderCode, verifierCode, connexionGoogle, deconnexion],
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
