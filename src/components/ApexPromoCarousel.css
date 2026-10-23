@@ -1,0 +1,57 @@
+.apxPromo {
+  position:relative; isolation:isolate; overflow:hidden; border-radius:18px;
+  height:256px; max-width:100%; color:#fff; background:#062b30;
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,sans-serif;
+  box-shadow:0 12px 23px rgba(7,45,37,.16); touch-action:pan-y;
+}
+.apxPromo * {box-sizing:border-box}
+.apxPromo__track {display:flex;width:100%;height:100%;transition:transform 690ms cubic-bezier(.22,1,.36,1);will-change:transform}
+.apxPromo__slide {width:100%;height:100%;position:relative;flex:0 0 100%;overflow:hidden}
+.apxPromo__photo {position:absolute;inset:-8%;width:116%;height:116%;background-size:cover;background-position:center;animation:apxPromoZoom 8s ease-out infinite alternate}
+@keyframes apxPromoZoom {from{transform:scale(1.02)}to{transform:scale(1.12) translateX(-8px)}}
+.apxPromo__gradient {position:absolute;inset:0;pointer-events:none;z-index:1;background:linear-gradient(90deg,rgba(5,24,32,.96) 0%,rgba(6,37,42,.86) 42%,rgba(5,24,29,.2) 100%),linear-gradient(0deg,rgba(3,22,23,.72),transparent 40%)}
+.apxPromo__top {position:absolute;z-index:2;top:17px;left:17px;right:17px;display:flex;align-items:center;justify-content:space-between;pointer-events:none}
+.apxPromo__logo {font-size:23px;font-weight:1000;font-style:italic;letter-spacing:-.075em;line-height:1;color:#f8fafc}
+.apxPromo__logo span {color:#2baaff}
+.apxPromo__adLabel {background:#e4fff0e8;color:#165b42;font-size:9px;font-weight:850;text-transform:uppercase;letter-spacing:.04em;padding:6px 9px;border-radius:30px}
+.apxPromo__message {position:absolute;z-index:2;top:58px;left:17px;right:20px;animation:apxPromoFadeIn .4s both}
+@keyframes apxPromoFadeIn {from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.apxPromo__message h3 {font-size:20px;font-weight:850;letter-spacing:-.045em;max-width:245px;line-height:1.16;margin:0 0 7px}
+.apxPromo__message p {font-size:11px;line-height:1.4;max-width:235px;font-weight:500;color:#e1efee;margin:0}
+.apxPromo__bottom {position:absolute;z-index:3;bottom:15px;left:17px;right:17px}
+.apxPromo__actions {display:flex;align-items:stretch;gap:8px;max-width:100%}
+.apxPromo__code {border:1px solid rgba(225,255,240,.55);box-shadow:0 3px 14px #071e1820;background:rgba(245,255,250,.95);border-radius:10px;padding:8px 13px 7px;min-width:116px;display:flex;flex-direction:column;justify-content:center}
+.apxPromo__code small {font-size:9px;line-height:1.1;font-weight:750;color:#477361}
+.apxPromo__code strong {font-size:25px;line-height:1.13;font-weight:900;letter-spacing:-.045em;color:#09583d}
+.apxPromo__copy {border:0;background:#12a46b;border-radius:10px;color:white;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;padding:11px 12px;min-width:0;white-space:nowrap;box-shadow:0 6px 13px #002e2130;transition:background .2s,transform .2s}
+.apxPromo__copy:hover{background:#0b8556}.apxPromo__copy:active{transform:scale(.97)}
+.apxPromo__copy svg {width:15px;height:15px;flex:none}
+.apxPromo__visit {display:flex;align-items:center;justify-content:center;border-radius:10px;padding:10px;text-decoration:none;color:#073c2a;background:#fff;font-size:11px;font-weight:800}
+.apxPromo__row {display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:9px;line-height:1.3;color:#eaf9ef;margin-top:9px}
+.apxPromo__dots {display:flex;align-items:center;gap:5px}
+.apxPromo__dot {border:0;background:#ffffff7b;border-radius:5px;width:5px;height:5px;padding:0;cursor:pointer;transition:width .3s,background .3s}
+.apxPromo__dot--active {width:17px;background:#67efb1}
+.apxPromo__sr {position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+@media(max-width:355px){.apxPromo__message h3{font-size:18px}.apxPromo__code{min-width:106px}.apxPromo__code strong{font-size:22px}.apxPromo__copy{padding:10px}}
+@media(prefers-reduced-motion:reduce){.apxPromo__photo,.apxPromo__message{animation:none!important}.apxPromo__track,.apxPromo__dot{transition:none!important}}
+
+/* Integration Apex : typography, readable controls and narrow screens. */
+.apxPromo { font-family: var(--font); min-width: 0; height: auto; min-height: 290px; display: flex; flex-direction: column; padding: 18px; gap: 18px; }
+.apxPromo__track { position: absolute; inset: 0; }
+.apxPromo__top, .apxPromo__message, .apxPromo__bottom { position: relative; top: auto; bottom: auto; left: auto; right: auto; }
+.apxPromo__message { margin-bottom: 14px; }
+.apxPromo__message h3 { font-size: 22px; max-width: 360px; }
+.apxPromo__message p { font-size: 13px; max-width: 300px; }
+.apxPromo__bottom { margin-top: auto; }
+.apxPromo__row { font-size: 11px; flex-wrap: wrap; }
+.apxPromo__dots { gap: 0; }
+.apxPromo__dot { width: 24px; height: 28px; border-radius: 0; background: transparent; position: relative; }
+.apxPromo__dot::after { content: ''; position: absolute; width: 5px; height: 5px; border-radius: 5px; background: #ffffff7b; top: 12px; left: 10px; }
+.apxPromo__dot--active::after { width: 17px; left: 4px; background: #67efb1; }
+.apxPromo__pause { width: 28px; height: 28px; border: 0; background: transparent; color: #fff; font-size: 14px; }
+.apxPromo__code strong { user-select: all; cursor: text; }
+.apxPromo__error { position: relative; z-index: 3; font-size: 12px; color: #fff; }
+.apxPromo:is(:hover, :focus-within) .apxPromo__photo { animation-play-state: paused; }
+@media (max-width: 355px) { .apxPromo { padding: 14px; } .apxPromo__message h3 { font-size: 20px; } }
+
+.apxPromo[data-paused='true'] .apxPromo__photo { animation-play-state: paused; }

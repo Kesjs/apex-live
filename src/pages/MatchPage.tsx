@@ -3,6 +3,7 @@ import type { CSSProperties } from 'react'
 import { provider } from '../data'
 import type { Prediction } from '../domain/contracts'
 import { BandeauPronostic } from '../components/BandeauPronostic'
+import ApexPromoCarousel from '../components/ApexPromoCarousel'
 import { Crest } from '../components/Crest'
 import { FaitsDuMatch } from '../components/FaitsDuMatch'
 import { FormStrip } from '../components/FormStrip'
@@ -99,6 +100,14 @@ function Fiche({ fiche, retour }: { fiche: Prediction; retour: string }) {
       {onglet === 'apercu' && <div className="detail-grid">
         <div className="stack">
           <BandeauPronostic fiche={fiche} />
+
+          <section className="stack-sm" aria-labelledby="offre-partenaire">
+            <SectionTitle id="offre-partenaire" aside={<span className="muted small">Publicité</span>}>
+              Offre partenaire
+            </SectionTitle>
+            <ApexPromoCarousel />
+            <p className="muted small">Contenu sponsorisé distinct de l’analyse Apex. Le code promo ne garantit aucun gain.</p>
+          </section>
 
           {fiche.synthese && (
             <section className="card synthese rise" aria-labelledby="synthese">
