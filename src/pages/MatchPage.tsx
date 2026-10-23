@@ -20,6 +20,8 @@ import { heureCourte, jourDeFiche, quandLabel } from '../lib/format'
 import { Link, useRouter } from '../lib/router'
 import { usePrefs } from '../lib/prefs'
 import { useAsync } from '../lib/useAsync'
+import { AnalysisTimeline, ConfidenceCard, FactorsCard, MatchSummary } from '../components/MatchInsights'
+import '../components/MatchInsights.css'
 
 function Fiche({ fiche, retour }: { fiche: Prediction; retour: string }) {
   const { estFavori, basculer } = useFavoris()
@@ -100,6 +102,7 @@ function Fiche({ fiche, retour }: { fiche: Prediction; retour: string }) {
       {onglet === 'apercu' && <div className="detail-grid">
         <div className="stack">
           <BandeauPronostic fiche={fiche} />
+          <MatchSummary fiche={fiche} />
 
           <section className="stack-sm" aria-labelledby="offre-partenaire">
             <SectionTitle id="offre-partenaire" aside={<span className="muted small">Publicité</span>}>
@@ -118,6 +121,8 @@ function Fiche({ fiche, retour }: { fiche: Prediction; retour: string }) {
               <p>{fiche.synthese}</p>
             </section>
           )}
+          <FactorsCard fiche={fiche} />
+          <AnalysisTimeline fiche={fiche} />
 
           {!p && (
             <section className="card state" role="status">
@@ -144,6 +149,7 @@ function Fiche({ fiche, retour }: { fiche: Prediction; retour: string }) {
         </div>
 
         <aside className="stack" aria-label="Contexte">
+          <ConfidenceCard fiche={fiche} />
           {r.statut === 'evalue' && (
             <section className="card side-card rise" aria-labelledby="resultat">
               <h2 id="resultat">Résultat du match</h2>

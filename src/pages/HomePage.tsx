@@ -40,6 +40,23 @@ function PlusSurs({ fiches }: { fiches: Prediction[] }) {
   )
 }
 
+function TableauDuJour({ fiches }: { fiches: Prediction[] }) {
+  const analyses = fiches.filter(f => f.pronostics)
+  const confiance = analyses.length === 0 ? 0 : analyses.reduce((sum, f) => sum + (f.pronostics!.issue.probabilite + f.pronostics!.buts.probabilite) / 2, 0) / analyses.length
+  const suivis = fiches.filter(f => f.resultat.statut === 'evalue').length
+  return (
+    <section className="card day-dashboard rise" aria-labelledby="dashboard-jour">
+      <SectionTitle id="dashboard-jour" aside={<span className="muted small">Aujourd'hui</span>}>Votre tableau de bord</SectionTitle>
+      <div className="dashboard-metrics">
+        <div><strong>{analyses.length}</strong><span>analyses publiées</span></div>
+        <div><strong>{Math.round(confiance * 100)} %</strong><span>confiance moyenne</span></div>
+        <div><strong>{suivis}</strong><span>matchs évalués</span></div>
+      </div>
+      <p className="muted small">Apex publie un signal uniquement quand les données sont suffisamment lisibles.</p>
+    </section>
+  )
+}
+
 export default function HomePage() {
   const { jour, setJour } = useDay()
   const { navigate } = useRouter()
@@ -86,6 +103,8 @@ export default function HomePage() {
                   <FeaturedMatch fiche={vedetteFiche} />
                 </section>
               )}
+
+              <TableauDuJour fiches={fiches} />
 
               <section aria-labelledby="jour-titre">
                 <SectionTitle

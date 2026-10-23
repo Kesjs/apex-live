@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Logo } from '../components/Icon'
 import { useAuth } from '../lib/auth'
 import { Link, useRouter } from '../lib/router'
@@ -17,12 +17,14 @@ export function FondAccueil() {
 export default function WelcomePage() {
   const { navigate } = useRouter()
   const { marquerVu } = useAuth()
+  const [intention, setIntention] = useState('comprendre')
 
   useEffect(() => {
     document.title = 'Bienvenue · Apex'
   }, [])
 
   const commencer = () => {
+    window.localStorage.setItem('apex:intention', intention)
     marquerVu()
     navigate('/', { replace: true })
   }
@@ -38,6 +40,15 @@ export default function WelcomePage() {
         <div className="welcome-copy">
           <h1>Le football, c'est mieux avec des pronos qui s'expliquent.</h1>
           <p>Issue, buts, bonus et score exact, avec le raisonnement derrière chaque choix.</p>
+          <div className="welcome-intentions" role="group" aria-label="Votre objectif">
+            <p className="welcome-intention-label">Qu'est-ce qui vous intéresse le plus ?</p>
+            {[
+              ['comprendre', 'Comprendre les matchs'],
+              ['signaux', 'Voir les signaux les plus solides'],
+              ['suivre', 'Suivre mes équipes'],
+              ['evaluer', 'Voir les résultats d’Apex'],
+            ].map(([value, label]) => <button key={value} type="button" className={intention === value ? 'is-selected' : ''} aria-pressed={intention === value} onClick={() => setIntention(value)}>{label}</button>)}
+          </div>
         </div>
         <div className="welcome-actions">
           <button type="button" className="welcome-cta" onClick={commencer}>
