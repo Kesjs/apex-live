@@ -8,7 +8,7 @@ import { ListSkeleton } from '../components/Skeletons'
 import { Disclaimer, EmptyState, ErrorState } from '../components/ui'
 import { infosCompetition } from '../lib/competitions'
 import { useDay } from '../lib/day'
-import { addDays, jourLongLabel } from '../lib/format'
+import { jourLongLabel } from '../lib/format'
 import { parCompetition } from '../lib/matchs'
 import { useAsync } from '../lib/useAsync'
 import { useRouter } from '../lib/router'
@@ -69,11 +69,6 @@ export default function MatchesPage() {
         <EmptyState
           titre="Aucun match ce jour-là"
           texte="Aucune rencontre n'est analysée pour cette journée."
-          action={
-            <button type="button" className="btn btn-secondary" onClick={() => setJour(addDays(jour, 1))}>
-              Voir le jour suivant
-            </button>
-          }
         />
       )}
 
