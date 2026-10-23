@@ -1,4 +1,5 @@
 import { Crest } from '../components/Crest'
+import { InstallApp } from '../components/InstallApp'
 import { Icon } from '../components/Icon'
 import type { IconName } from '../components/Icon'
 import { PageHeader } from '../components/PageHeader'
@@ -80,6 +81,7 @@ export default function SettingsPage() {
         </section>
 
         <div className="stack">
+          <InstallApp />
           <section aria-labelledby="compte" className="stack-sm">
             <SectionTitle id="compte">Compte</SectionTitle>
             <div className="card state compact">
