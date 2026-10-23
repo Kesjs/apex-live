@@ -79,6 +79,7 @@ function Fiche({ fiche, retour }: { fiche: Prediction; retour: string }) {
         )}
         {fiche.meta.donnees_limitees && <Chip ton="am">Peu de matchs récents : pronostic plus fragile</Chip>}
         {fiche.meta.retrocalcul && <Chip ton="muet">Rétro-calcul : données d'avant le match</Chip>}
+        {fiche.meta.prediction_externe && <Chip ton="muet">Comparaison API-Football · Apex reste le modèle principal</Chip>}
         {cotes && fiche.meta.cotes_observees_le && <Chip ton="muet">Cotes de {heureCourte(fiche.meta.cotes_observees_le)}</Chip>}
       </div>
 

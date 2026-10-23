@@ -3,6 +3,7 @@ import { construireFiche } from './engine/fiche.ts'
 import { analyserMatch } from './engine/analyse.ts'
 import { produireSynthese } from './engine/synthese.ts'
 import type { Stockage } from './store.ts'
+import { ApiFootballPredictionSource } from './sources/api-football-prediction.ts'
 
 export interface BilanJour {
   jour: string
@@ -28,6 +29,7 @@ export async function genererJour(
   const retro = jour < maintenant.toISOString().slice(0, 10)
   const rencontres = await source.rencontres(jour)
   const contextes = new Map<string, Contexte>()
+  const externe = env.API_FOOTBALL_KEY ? new ApiFootballPredictionSource(env.API_FOOTBALL_KEY) : null
   const bilan: BilanJour = { jour, rencontres: rencontres.length, avecPronostics: 0, sansPronostics: 0, ignores: 0, erreurs: [] }
 
   for (const r of rencontres) {
@@ -43,6 +45,14 @@ export async function genererJour(
         contextes.set(r.competition, ctx)
       }
       let sortie = construireFiche(r, ctx, source, maintenant)
+      if (externe) {
+        try {
+          const comparaison = await externe.prediction(r)
+          if (comparaison) sortie.fiche.meta.prediction_externe = comparaison
+        } catch {
+          // L'enrichissement reste facultatif : une restriction de saison/quota ne bloque jamais Apex.
+        }
+      }
       if (retro) sortie.fiche.meta.retrocalcul = true
       if (sortie.fiche.pronostics) {
         // L'IA choisit et rédige ; si elle échoue ou est refusée par les contrôles, on garde le moteur.

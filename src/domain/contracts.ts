@@ -89,6 +89,12 @@ export interface MetaFiche {
   retrocalcul?: boolean
   /** true = au moins une équipe a moins de 5 matchs récents : pronostic donné, mais plus fragile. */
   donnees_limitees?: boolean
+  /** Comparaison facultative avec API-Football, uniquement si la saison est accessible et les données sont actuelles. */
+  prediction_externe?: {
+    source: 'api-football'
+    issue: { domicile: number; nul: number; exterieur: number }
+    recuperee_le: string
+  }
 }
 
 export interface ResultatFiche {
