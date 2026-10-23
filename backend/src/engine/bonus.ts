@@ -12,8 +12,9 @@ const r1 = (n: number): number => Math.round(n * 10) / 10
 const virgule = (n: number): string => String(n).replace('.', ',')
 
 /**
- * Bonus : on cherche la catégorie où les deux équipes sont nettement au-dessus de
- * la moyenne de la ligue, avec une ligne franchie régulièrement. Sinon, pas de bonus (null).
+ * Bonus : chaque catégorie est évaluée séparément. On publie uniquement la meilleure
+ * combinaison écart/constance/couverture ; il n'y a aucun tirage aléatoire et une
+ * catégorie faible ne peut pas être affichée simplement pour remplir la carte.
  */
 export function choisirBonus(
   dom: MatchPasse[],
@@ -22,7 +23,7 @@ export function choisirBonus(
   cotes: Cotes,
 ): { pronostic: PronosticBonus; categorie: CategorieBonus; ligne: number } | null {
   const echantillon = [...recents(dom, NB_MATCHS), ...recents(ext, NB_MATCHS)]
-  let meilleur: { cat: CategorieBonus; ecart: number; obs: number; ligue: number; ligne: number; taux: number } | null = null
+  let meilleur: { cat: CategorieBonus; ecart: number; obs: number; ligue: number; ligne: number; taux: number; score: number } | null = null
 
   for (const cat of CATEGORIES) {
     const ligue = ctx.moy_bonus[cat]
@@ -37,7 +38,9 @@ export function choisirBonus(
     const depasse = valeurs.filter(v => v > ligne).length
     const taux = (depasse + 1) / (valeurs.length + 2)
     if (taux < TAUX_MIN) continue
-    if (!meilleur || ecart > meilleur.ecart) meilleur = { cat, ecart, obs, ligue, ligne, taux }
+    // La couverture évite de préférer un signal fragile obtenu sur le minimum de données.
+    const score = ecart * taux * (valeurs.length / (valeurs.length + 4))
+    if (!meilleur || score > meilleur.score) meilleur = { cat, ecart, obs, ligue, ligne, taux, score }
   }
   if (!meilleur) return null
 

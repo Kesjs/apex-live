@@ -64,6 +64,13 @@ test('Bonus : pas assez de données → null', () => {
   assert.equal(choisirBonus(peu, peu, ctx, {}), null)
 })
 
+test('Bonus : la catégorie publiée varie selon le signal le plus solide', () => {
+  const cartons = matchs(10, 1, 1, { cartons: 5.5, corners: 10, fautes: 24 })
+  const corners = matchs(10, 1, 1, { cartons: 4, corners: 13, fautes: 24 })
+  assert.equal(choisirBonus(cartons, cartons, ctx, {})?.categorie, 'cartons')
+  assert.equal(choisirBonus(corners, corners, ctx, {})?.categorie, 'corners')
+})
+
 test('Value : la marge du bookmaker est retirée', () => {
   const cotes = { '1': 2, N: 4, '2': 4 } // 0.5 + 0.25 + 0.25 = 1.0, pas de marge
   assert.ok(Math.abs(probaImplicite('1', cotes)! - 0.5) < 1e-9)
