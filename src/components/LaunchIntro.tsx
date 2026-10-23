@@ -57,10 +57,9 @@ export function LaunchIntro({ children }: { children: ReactNode }) {
       <div className="launch-intro__pitch" aria-hidden="true"><i /><i /></div>
       <div className="launch-intro__content">
         <div className="launch-intro__mark" aria-hidden="true">
-          <svg className="launch-intro__logo" viewBox="0 0 100 100" fill="none">
-            <path className="launch-intro__stroke launch-intro__stroke--left" d="M50 8L9 92h21l20-46 20 46h21L50 8Z" />
-            <path className="launch-intro__stroke launch-intro__stroke--right" d="M50 8L91 92H70L50 46 30 92H9L50 8Z" />
-            <path className="launch-intro__stroke launch-intro__stroke--bar" d="M30 68h40l7 13H23l7-13Z" />
+          <svg className="launch-intro__logo" viewBox="0 0 32 32" fill="none">
+            <defs><linearGradient id="intro-logo-gradient" x1="5" y1="4" x2="27" y2="29" gradientUnits="userSpaceOnUse"><stop stopColor="#8ff05f" /><stop offset=".46" stopColor="#24d27b" /><stop offset="1" stopColor="#079866" /></linearGradient></defs>
+            <path className="launch-intro__stroke" fill="url(#intro-logo-gradient)" fillRule="evenodd" d="M16 3L29 29h-7.2l-1.9-4.3h-7.8L10.2 29H3zM16 12.5l-2.7 6.3h5.4z" />
           </svg>
         </div>
         <h1 id="launch-title" className="launch-intro__name">Apex</h1>

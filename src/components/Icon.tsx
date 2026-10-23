@@ -96,7 +96,8 @@ export function Icon({ name, size = 20, strokeWidth = 1.8, filled = false, class
 export function Logo({ size = 32 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-      <path fill="currentColor" fillRule="evenodd" d="M16 3L29 29h-7.2l-1.9-4.3h-7.8L10.2 29H3zM16 12.5l-2.7 6.3h5.4z" />
+      <defs><linearGradient id="apex-logo-gradient" x1="5" y1="4" x2="27" y2="29" gradientUnits="userSpaceOnUse"><stop stopColor="#8ff05f" /><stop offset=".46" stopColor="#24d27b" /><stop offset="1" stopColor="#079866" /></linearGradient></defs>
+      <path fill="url(#apex-logo-gradient)" fillRule="evenodd" d="M16 3L29 29h-7.2l-1.9-4.3h-7.8L10.2 29H3zM16 12.5l-2.7 6.3h5.4z" />
     </svg>
   )
 }
