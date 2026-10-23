@@ -45,7 +45,7 @@ export async function genererJour(
         contextes.set(r.competition, ctx)
       }
       let sortie = construireFiche(r, ctx, source, maintenant)
-      if (externe) {
+      if (externe && !retro) {
         try {
           const comparaison = await externe.prediction(r)
           if (comparaison) sortie.fiche.meta.prediction_externe = comparaison
