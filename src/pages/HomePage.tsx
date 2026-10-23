@@ -62,6 +62,14 @@ export default function HomePage() {
   const { navigate } = useRouter()
   const [etat, reessayer] = useAsync(() => provider.listMatches(jour), [jour])
   const [filtre, setFiltre] = useState<Filtre>('tous')
+  const [intention] = useState(() => window.localStorage.getItem('apex:intention') ?? 'comprendre')
+  const sousTitre = intention === 'signaux'
+    ? 'Les signaux les plus solides, expliqués simplement.'
+    : intention === 'suivre'
+      ? 'Retrouvez les matchs importants pour vous, jour après jour.'
+      : intention === 'evaluer'
+        ? 'Suivez ce que les pronostics ont réellement donné.'
+        : jourLongLabel(jour)
 
   const estAujourdhui = jour === todayISO()
   const fiches = etat.status === 'ready' ? etat.data : []
@@ -70,7 +78,7 @@ export default function HomePage() {
 
   return (
     <div className="page-body">
-      <PageHeader titre={estAujourdhui ? "Aujourd'hui" : quandLabel(jour)} sous={jourLongLabel(jour)} />
+      <PageHeader titre={estAujourdhui ? "Aujourd'hui" : quandLabel(jour)} sous={sousTitre} />
       <DateRail jour={jour} onChange={setJour} />
 
       <div className="home-grid">
