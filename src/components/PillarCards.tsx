@@ -110,8 +110,8 @@ export function ButsCard({ p, valeur, delai }: { p: PronosticButs; valeur?: Vale
 export function BonusCard({ p, delai }: { p: PronosticBonus | null; delai: number }) {
   if (!p) {
     return (
-      <PillarShell icone="card" ton="am" kicker="3 · Bonus" titre="Pas de bonus pour ce match" delai={delai}>
-        <p className="pillar-note">Aucun signal statistique assez net sur les cartons, corners, fautes ou hors-jeu pour proposer un bonus.</p>
+      <PillarShell icone="card" ton="am" kicker="3 · Bonus" titre="Bonus non publié" delai={delai}>
+        <p className="pillar-note">Les données d’événements (cartons, corners, fautes ou hors-jeu) ne sont pas assez complètes ou régulières pour publier un signal fiable sur ce match.</p>
       </PillarShell>
     )
   }
@@ -137,7 +137,7 @@ export function BonusCard({ p, delai }: { p: PronosticBonus | null; delai: numbe
 
 export function ScoresCard({ scores, delai }: { scores: PronosticScore[]; delai: number }) {
   return (
-    <PillarShell icone="sparkle" ton="am" kicker="4 · Coup de poker" titre="Score le plus probable" delai={delai}>
+    <PillarShell icone="sparkle" ton="am" kicker="4 · Score exact" titre="Score le plus probable" delai={delai}>
       <div className="scores">
         {scores.slice(0, 1).map((s, i) => (
           <div className="score-row" key={s.score}>
@@ -149,7 +149,7 @@ export function ScoresCard({ scores, delai }: { scores: PronosticScore[]; delai:
         ))}
       </div>
       <Pied niveau="eleve" gauche={null} />
-      <p className="pillar-note">Un score exact sort rarement, même le plus probable (souvent moins d'une fois sur six). À prendre comme un pari de fantaisie.</p>
+      <p className="pillar-note">Un score exact reste rare, même lorsqu’il est le plus probable. Utilisez-le comme un repère statistique, jamais comme une certitude.</p>
     </PillarShell>
   )
 }

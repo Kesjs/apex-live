@@ -122,9 +122,10 @@ function Fiche({ fiche, retour }: { fiche: Prediction; retour: string }) {
 
           {p && (
             <section aria-labelledby="piliers" className="stack">
-              <SectionTitle id="piliers" aside={<span className="muted small">Du plus sûr au plus risqué</span>}>
+              <SectionTitle id="piliers" aside={<span className="muted small">Du signal le plus solide au plus incertain</span>}>
                 Les 4 pronostics
               </SectionTitle>
+              <p className="muted small">Chaque carte montre ce que les données permettent d’estimer. Une carte sans signal signifie que nous préférons ne rien inventer.</p>
               <IssueCard p={p.issue} valeur={fiche.value} delai={1} />
               <ButsCard p={p.buts} valeur={fiche.value} delai={2} />
               <BonusCard p={p.bonus} delai={3} />
@@ -180,7 +181,7 @@ function Fiche({ fiche, retour }: { fiche: Prediction; retour: string }) {
               <p>Statistiques détaillées indisponibles pour ce match.</p>
             </section>
           )}
-          <section className="card side-card"><h2>Données utilisées</h2><p className="muted small">Statistiques calculées sur les 5 derniers matchs de chaque équipe, toutes compétitions confondues. Elles servent à construire les probabilités et ne garantissent aucun résultat.</p></section>
+          <section className="card side-card"><h2>Données utilisées</h2><p className="muted small">Les probabilités s’appuient sur les 5 derniers matchs de chaque équipe, toutes compétitions confondues. Les bonus nécessitent en plus des données d’événements fiables. Ces estimations aident à lire le match et ne garantissent aucun résultat.</p></section>
         </div>
         <aside className="stack">{fiche.forme ? <FormStrip forme={fiche.forme} domicile={fiche.equipes.domicile} exterieur={fiche.equipes.exterieur} /> : <div className="card state state-compact"><span className="state-icon"><Icon name="info" size={22} /></span><p>Forme récente indisponible.</p></div>}</aside>
       </section>}
