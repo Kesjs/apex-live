@@ -97,7 +97,7 @@ export function MatchRow({ fiche, filtre = 'tous', index = 0 }: { fiche: Predict
   return (
     <Link to={'/match/' + fiche.match_id} className="mrow press rise" style={style}>
       <time className="mrow-time" dateTime={fiche.date_heure}>
-        {status.final ? 'Terminé' : status.pending ? 'En attente' : fiche.resultat.statut === 'annule' ? 'Reporté' : heureCourte(fiche.date_heure)}
+        {status.final ? 'Terminé' : status.live ? 'En direct' : status.pending ? 'En attente' : fiche.resultat.statut === 'annule' ? 'Reporté' : heureCourte(fiche.date_heure)}
       </time>
       <span className="mrow-teams">
         <span>

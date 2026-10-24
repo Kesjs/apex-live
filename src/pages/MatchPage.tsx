@@ -37,7 +37,7 @@ function Resultat({ fiche }: { fiche: Prediction }) {
         <div className="rmarks"><ResultMark label="Issue" valeur={r.issue} /><ResultMark label="Buts" valeur={r.buts} /><ResultMark label="Bonus" valeur={r.bonus} /><ResultMark label="Score exact" valeur={r.score} /></div>
         {r.bonus_en_attente && <p className="muted small">Le résultat du bonus attend les statistiques d’événements. Le score final est confirmé.</p>}
       </>}
-    </> : <p className="muted">{r.statut === 'annule' ? 'La rencontre est annulée ou reportée par la source. Les pronostics ne sont pas évalués.' : status.pending ? 'Le coup d’envoi prévu est passé. La source n’a pas encore confirmé le résultat ; aucun score ni statut en direct n’est déduit de l’heure.' : 'Le résultat sera affiché ici dès sa confirmation par la source.'}</p>}
+    </> : <p className="muted">{r.statut === 'annule' ? 'La rencontre est annulée ou reportée par la source. Les pronostics ne sont pas évalués.' : status.live ? 'Le coup d’envoi est dépassé. Le score sera affiché dès confirmation par la source.' : status.pending ? 'Le coup d’envoi prévu est passé. La source n’a pas encore confirmé le résultat.' : 'Le résultat sera affiché ici dès sa confirmation par la source.'}</p>}
   </section>
 }
 
@@ -61,10 +61,10 @@ function Fiche({ fiche, retour, actualiser, enCours, erreur }: { fiche: Predicti
       </div>
       <section className="match-hero" aria-label="Match">
         <div className="featured-team"><Crest nom={fiche.equipes.domicile} logoUrl={fiche.logos?.domicile} taille="xl" /><h1>{fiche.equipes.domicile}</h1></div>
-        <div className="match-hero-mid"><p className="match-hero-time tn">{status.score ?? heureCourte(fiche.date_heure)}</p><Chip ton={status.final ? 'ac' : 'muet'}>{status.label}</Chip></div>
+        <div className="match-hero-mid"><p className="match-hero-time tn">{status.score ?? heureCourte(fiche.date_heure)}</p><Chip ton={status.final || status.live ? 'ac' : 'muet'}>{status.label}</Chip></div>
         <div className="featured-team"><Crest nom={fiche.equipes.exterieur} logoUrl={fiche.logos?.exterieur} taille="xl" /><h1>{fiche.equipes.exterieur}</h1></div>
       </section>
-      <div className="match-freshness"><span>{status.label === 'À venir' ? <KickoffCountdown iso={fiche.date_heure} /> : status.final ? 'Score confirmé par ' + fiche.meta.source_stats : 'En attente de confirmation par la source'}</span><button type="button" className="refresh-match" disabled={enCours} onClick={actualiser}>{enCours ? 'Actualisation…' : 'Actualiser'}</button></div>
+      <div className="match-freshness"><span>{status.label === 'À venir' ? <KickoffCountdown iso={fiche.date_heure} /> : status.final ? 'Score confirmé par ' + fiche.meta.source_stats : status.live ? 'En direct — score en attente de confirmation' : 'En attente de confirmation par la source'}</span><button type="button" className="refresh-match" disabled={enCours} onClick={actualiser}>{enCours ? 'Actualisation…' : 'Actualiser'}</button></div>
       {fiche.resultat.mis_a_jour_le && <p className="muted small center">Résultat actualisé le {dateMatch(fiche.resultat.mis_a_jour_le)}</p>}
       {erreur && <p role="status" className="refresh-error">{erreur} Les dernières données chargées restent affichées.</p>}
     </header>
