@@ -284,6 +284,13 @@ main {
 .community-discussion { flex-direction:row; padding:16px; }
 .community-discussion p { margin:6px 0 10px; color:var(--mu); line-height:1.5; }
 .community-replies { display:flex; gap:12px; color:var(--mu); font-size:12px; }
+.community-replies button { border:0; padding:0; background:none; color:var(--ac); font:inherit; cursor:pointer; }
+.community-write { padding:16px; }
+.community-write-head,.community-write-foot { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.community-write textarea { display:block; width:100%; min-height:110px; box-sizing:border-box; margin:14px 0; padding:12px; border:1px solid var(--ln); border-radius:12px; background:var(--s2); color:var(--tx); font:inherit; line-height:1.5; resize:vertical; outline:none; }
+.community-write textarea:focus { border-color:var(--ac); }
+.community-write .primary-btn { border:0; border-radius:10px; padding:9px 16px; background:var(--ac); color:#fff; font:inherit; font-weight:700; cursor:pointer; }
+.community-write .primary-btn:disabled { opacity:.45; cursor:not-allowed; }
 @media(max-width:600px){.community-page{padding-left:16px;padding-right:16px}.community-kind{font-size:10px;padding:4px 7px}.community-post{padding:15px}.community-post h2{font-size:17px}.community-post-actions{gap:12px}.community-save{font-size:0!important}.community-save svg{margin:0}.community-tabs button{padding:9px 13px}}
 
 .home-grid,
