@@ -8,7 +8,7 @@ import { FormStrip } from '../components/FormStrip'
 import { Icon } from '../components/Icon'
 import { KickoffCountdown } from '../components/KickoffCountdown'
 import { PlusMoins } from '../components/PlusMoins'
-import { BonusCard, ButsCard, IssueCard, ScoresCard } from '../components/PillarCards'
+import { BonusCard, ButsCard, ComboCard, IssueCard, ScoresCard } from '../components/PillarCards'
 import { ResultMark } from '../components/ResultMark'
 import { DetailSkeleton } from '../components/Skeletons'
 import { StatsComparees } from '../components/StatsComparees'
@@ -86,7 +86,7 @@ function Fiche({ fiche, retour, actualiser, enCours, erreur }: { fiche: Predicti
           <div className="analysis-notice"><Icon name="info" size={18} /><p>{status.final ? 'Analyse d’avant-match conservée pour comparer les prévisions au résultat réel.' : 'Estimations d’avant-match : les probabilités ne garantissent aucun résultat.'}</p></div>
           {fiche.meta.retrocalcul && <Chip ton="muet">Rétro-calcul avec les données antérieures au match</Chip>}
           {fiche.meta.donnees_limitees && <Chip ton="am">Historique incomplet : estimations plus fragiles</Chip>}
-          {p ? <><MatchSummary fiche={fiche} /><div className="prediction-grid"><IssueCard p={p.issue} valeur={fiche.value} delai={0} /><ButsCard p={p.buts} valeur={fiche.value} delai={0} /><BonusCard p={p.bonus} delai={0} /><ScoresCard scores={p.scores} delai={0} /></div><FactorsCard fiche={fiche} /></> : <section className="card state"><h2>Pas de pronostic publié</h2><p>{fiche.raison_absence ?? 'Les données disponibles sont insuffisantes.'}</p></section>}
+          {p ? <><MatchSummary fiche={fiche} /><div className="prediction-grid"><IssueCard p={p.issue} valeur={fiche.value} delai={0} /><ButsCard p={p.buts} valeur={fiche.value} delai={0} /><BonusCard p={p.bonus} delai={0} /><ScoresCard scores={p.scores} delai={0} /><ComboCard fiche={fiche} delai={0} /></div><FactorsCard fiche={fiche} /></> : <section className="card state"><h2>Pas de pronostic publié</h2><p>{fiche.raison_absence ?? 'Les données disponibles sont insuffisantes.'}</p></section>}
           {status.final && <Resultat fiche={fiche} />}
           <p className="muted small">Analyse générée le {dateMatch(fiche.meta.genere_le)} · Moteur {fiche.meta.version_moteur}.</p>
         </>}

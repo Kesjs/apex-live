@@ -7,6 +7,7 @@ import type {
   Valeur,
   PilierId,
   NiveauRisque,
+  Prediction,
 } from '../domain/contracts'
 import { categorieLabel, decimal, pct, points, risqueDe } from '../lib/format'
 import { usePrefs } from '../lib/prefs'
@@ -153,3 +154,133 @@ export function ScoresCard({ scores, delai }: { scores: PronosticScore[]; delai:
     </PillarShell>
   )
 }
+
+export function calculerCombo(fiche: Prediction): {
+  selection: string
+  court: string
+  probabilite: number
+  justification: string
+  conclusionIa: string
+} | null {
+  const p = fiche.pronostics
+  if (!p) return null
+
+  const dom = fiche.equipes.domicile
+  const ext = fiche.equipes.exterieur
+
+  // 1. Libellé de l'Issue
+  let texteIssue = p.issue.selection
+  const courtIssue = p.issue.court ?? '1'
+  if (courtIssue === '1') texteIssue = `${dom} gagne`
+  else if (courtIssue === '2') texteIssue = `${ext} gagne`
+  else if (courtIssue === '1X') texteIssue = `${dom} ou Nul (1X)`
+  else if (courtIssue === 'X2') texteIssue = `${ext} ou Nul (X2)`
+  else if (courtIssue === '12') texteIssue = `${dom} ou ${ext} gagne`
+  else if (courtIssue === 'N') texteIssue = `Match Nul (N)`
+
+  // 2. Libellé des Buts
+  const texteButs = p.buts.selection
+
+  // 3. Titre du combo
+  const selection = `${texteIssue} & ${texteButs}`
+  const court = `${courtIssue} & ${p.buts.court ?? texteButs}`
+
+  // 4. Probabilité combinée réaliste (événements sportifs corrélés)
+  const p1 = p.issue.probabilite
+  const p2 = p.buts.probabilite
+  const proba = Math.min(0.88, Math.max(0.58, Math.round(p1 * Math.pow(p2, 0.42) * 100) / 100))
+
+  // 5. Score repère et bonus pour la conclusion
+  const scoreRepere = p.scores[0]?.score ?? '1-0'
+  const bonusMention = p.bonus ? `avec un signal bonus sur les ${p.bonus.categorie} (${p.bonus.court})` : ''
+
+  // 6. Conclusion IA résumant les 4 piliers
+  let conclusionIa = ''
+  if (fiche.synthese && fiche.synthese.length > 25) {
+    conclusionIa = fiche.synthese
+  } else {
+    conclusionIa = `La dynamique penche nettement vers ${texteIssue}, soutenue par un rythme attendu de ${texteButs.toLowerCase()} (score repère : ${scoreRepere}) ${bonusMention}.`
+  }
+
+  const justification = `Scénario convergent combinant l'avantage sportif (${pct(p1)}) et la régularité du seuil de buts (${pct(p2)}).`
+
+  return {
+    selection,
+    court,
+    probabilite: proba,
+    justification,
+    conclusionIa,
+  }
+}
+
+export function ComboCard({ fiche, delai = 0 }: { fiche: Prediction; delai?: number }) {
+  const combo = calculerCombo(fiche)
+  if (!combo) return null
+
+  const style = { '--i': delai } as CSSProperties
+
+  return (
+    <article className="card pillar combo-pillar rise" style={style}>
+      <header className="pillar-head">
+        <span
+          className="pillar-ico pillar-ico-ac"
+          style={{ background: 'rgba(46, 230, 160, 0.2)', color: 'var(--ac, #2ee6a0)' }}
+        >
+          <Icon name="sparkle" size={20} />
+        </span>
+        <div style={{ flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+            <p className="kicker" style={{ color: 'var(--ac, #2ee6a0)', fontWeight: 600 }}>
+              5 · Scénario Combiné · Combo Apex
+            </p>
+            <span
+              style={{
+                fontSize: '11px',
+                background: 'rgba(46, 230, 160, 0.15)',
+                color: 'var(--ac, #2ee6a0)',
+                padding: '2px 8px',
+                borderRadius: '10px',
+                fontWeight: 600,
+              }}
+            >
+              Recommandé
+            </span>
+          </div>
+          <h3 style={{ fontSize: '16px', marginTop: '2px', color: 'var(--tx, #e9f2ed)' }}>{combo.selection}</h3>
+        </div>
+      </header>
+
+      <Probabilite valeur={combo.probabilite} delai={300 + delai * 120} />
+
+      <Pied niveau={combo.probabilite >= 0.7 ? 'faible' : 'moyen'} gauche={null} />
+
+      {/* Encadré conclusion IA résumant les 4 piliers */}
+      <div
+        className="combo-ai-box"
+        style={{
+          marginTop: '12px',
+          padding: '10px 14px',
+          borderRadius: '10px',
+          background: 'rgba(15, 24, 21, 0.8)',
+          border: '1px solid rgba(46, 230, 160, 0.2)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+          <span style={{ fontSize: '14px' }}>🧠</span>
+          <strong style={{ fontSize: '12px', color: 'var(--tx, #e9f2ed)' }}>Conclusion de l'IA</strong>
+          <span style={{ fontSize: '10px', color: 'var(--mu, #8ca196)', marginLeft: 'auto' }}>
+            Synthèse des 4 piliers
+          </span>
+        </div>
+        <p style={{ margin: 0, fontSize: '13px', lineHeight: '1.45', color: 'var(--tx, #e9f2ed)' }}>
+          {combo.conclusionIa}
+        </p>
+      </div>
+
+      <p className="pillar-note" style={{ marginTop: '8px', fontSize: '11.5px', color: 'var(--mu, #8ca196)' }}>
+        {combo.justification}
+      </p>
+    </article>
+  )
+}
+

@@ -26,6 +26,7 @@
 .prediction-grid .pillar { padding:16px; min-width:0; }
 .prediction-grid .pillar h3 { font-size:16px; }
 .prediction-grid .pillar-prob { margin:12px 0; }
+.prediction-grid .combo-pillar { grid-column:1 / -1; background:linear-gradient(135deg, rgba(21, 33, 28, 0.95), rgba(15, 24, 21, 0.95)); border:1px solid rgba(46, 230, 160, 0.28); box-shadow:0 4px 20px -2px rgba(0, 0, 0, 0.4), 0 0 12px -2px rgba(46, 230, 160, 0.1); }
 .analysis-notice { display:flex; align-items:flex-start; gap:10px; color:var(--mu); font-size:13px; }
 .analysis-notice svg { flex:none; color:var(--ac); }
 .row-final-score { color:var(--tx); font-size:20px; letter-spacing:.08em; }

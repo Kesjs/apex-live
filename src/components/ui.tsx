@@ -88,12 +88,9 @@ export function SectionTitle({ id, children, aside }: { id?: string; children: R
   )
 }
 
-/** Cote d'un pronostic. N'affiche rien si la cote est absente ou si l'utilisateur a masqué les cotes. */
-export function Cote({ valeur, mode = 'chip', prefixe = true, vide = false }: { valeur?: number; mode?: 'chip' | 'texte'; prefixe?: boolean; vide?: boolean }) {
-  const { cotes } = usePrefs()
-  if (valeur === undefined || !cotes) return vide ? <span /> : null
-  const texte = (prefixe ? 'Cote ' : '') + formatCote(valeur)
-  return mode === 'texte' ? <span className="tn muted">{texte}</span> : <Chip>{texte}</Chip>
+/** Cote d'un pronostic. Masquée par défaut (les cotes ne sont pas affichées car non garanties fiables). */
+export function Cote({ vide = false }: { valeur?: number; mode?: 'chip' | 'texte'; prefixe?: boolean; vide?: boolean }) {
+  return vide ? <span /> : null
 }
 
 function mouvementReduit(animations: boolean): boolean {

@@ -31,12 +31,14 @@ export function ApexAiTopBar() {
     >
       <div
         style={{
-          background: 'linear-gradient(135deg, rgba(21, 33, 28, 0.95), rgba(15, 24, 21, 0.95))',
-          border: '1px solid rgba(46, 230, 160, 0.25)',
-          borderRadius: '12px',
-          boxShadow: '0 4px 18px rgba(0, 0, 0, 0.3)',
+          background: 'linear-gradient(135deg, rgba(21, 33, 28, 0.88), rgba(15, 24, 21, 0.92))',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: '1px solid rgba(46, 230, 160, 0.22)',
+          borderRadius: '14px',
+          boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.45), 0 0 16px -2px rgba(46, 230, 160, 0.08)',
           overflow: 'hidden',
-          transition: 'all 200ms ease',
+          transition: 'all 250ms cubic-bezier(0.2, 0.7, 0.2, 1)',
         }}
       >
         {/* Bandeau supérieur toujours visible sous la navbar */}

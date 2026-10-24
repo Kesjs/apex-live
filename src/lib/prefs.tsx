@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 /** Réglages de l'utilisateur, gardés sur cet appareil. */
 export type Prefs = { cotes: boolean; animations: boolean }
 
-const DEFAUT: Prefs = { cotes: true, animations: true }
+const DEFAUT: Prefs = { cotes: false, animations: true }
 const CLE = 'apex:prefs'
 
 function lire(): Prefs {
@@ -12,7 +12,7 @@ function lire(): Prefs {
     const brut = window.localStorage.getItem(CLE)
     if (!brut) return DEFAUT
     const o = JSON.parse(brut) as Partial<Prefs>
-    return { cotes: o.cotes !== false, animations: o.animations !== false }
+    return { cotes: false, animations: o.animations !== false }
   } catch {
     return DEFAUT
   }

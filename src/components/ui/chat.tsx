@@ -179,15 +179,15 @@ export default function ChatComposer({
       style={{
         display: "flex",
         flexDirection: "column",
-        height: "320px",
+        height: "340px",
         width: "100%",
-        maxWidth: "380px",
-        borderRadius: "var(--radius-card, 12px)",
-        background: "var(--surface)",
+        maxWidth: "480px",
+        borderRadius: "var(--radius-card, 14px)",
+        background: "linear-gradient(180deg, rgba(19, 31, 26, 0.98) 0%, rgba(13, 22, 19, 0.98) 100%)",
         color: "var(--ink)",
-        boxShadow: "var(--shadow-card)",
-        border: "1px solid var(--line)",
-        fontFamily: "system-ui, -apple-system, sans-serif",
+        boxShadow: "0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(46, 230, 160, 0.15)",
+        border: "1px solid rgba(46, 230, 160, 0.18)",
+        fontFamily: "var(--font, 'Manrope', system-ui, sans-serif)",
       }}
     >
       {/* HEADER — Onglets + Quota restant + Actions */}
