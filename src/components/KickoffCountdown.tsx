@@ -4,7 +4,7 @@ import { heureCourte } from '../lib/format'
 function libelle(iso: string, maintenant: number): string {
   const ecart = new Date(iso).getTime() - maintenant
   if (!Number.isFinite(ecart)) return heureCourte(iso)
-  if (ecart <= 0) return 'Coup d’envoi imminent'
+  if (ecart <= 0) return ecart < -3 * 3600_000 ? 'Résultat indisponible' : 'Statut en attente'
   const minutes = Math.ceil(ecart / 60_000)
   if (minutes < 60) return `Dans ${minutes} min`
   const heures = Math.floor(minutes / 60)

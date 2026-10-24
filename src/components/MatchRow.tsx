@@ -5,6 +5,7 @@ import { Link } from '../lib/router'
 import { Crest } from './Crest'
 import { Icon } from './Icon'
 import { Chip, Cote } from './ui'
+import { matchStatus } from '../lib/match-status'
 
 export type Filtre = 'tous' | PilierId
 
@@ -92,10 +93,11 @@ function Pronos({ fiche, filtre }: { fiche: Prediction; filtre: Filtre }) {
 
 export function MatchRow({ fiche, filtre = 'tous', index = 0 }: { fiche: Prediction; filtre?: Filtre; index?: number }) {
   const style = { '--i': index } as CSSProperties
+  const status = matchStatus(fiche)
   return (
     <Link to={'/match/' + fiche.match_id} className="mrow press rise" style={style}>
       <time className="mrow-time" dateTime={fiche.date_heure}>
-        {heureCourte(fiche.date_heure)}
+        {status.final ? 'Terminé' : status.pending ? 'En attente' : fiche.resultat.statut === 'annule' ? 'Reporté' : heureCourte(fiche.date_heure)}
       </time>
       <span className="mrow-teams">
         <span>
@@ -108,7 +110,7 @@ export function MatchRow({ fiche, filtre = 'tous', index = 0 }: { fiche: Predict
         </span>
       </span>
       <span className="mrow-chips">
-        <Pronos fiche={fiche} filtre={filtre} />
+        {status.final ? <strong className="row-final-score tn" aria-label={'Score final ' + status.score}>{status.score}</strong> : <Pronos fiche={fiche} filtre={filtre} />}
       </span>
       <Icon name="chevron" size={16} className="mrow-go" />
     </Link>

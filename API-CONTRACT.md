@@ -97,3 +97,11 @@ Renvoie les articles synchronisés côté serveur depuis TheNewsAPI. Le navigate
 1. Copie `.env.example` en `.env`.
 2. Mets `VITE_DATA_SOURCE=api` et `VITE_API_URL=http://localhost:8787` (l'adresse de ton back-end). Le mode réel est déjà sélectionné par défaut si la variable est absente.
 3. Relance `npm run dev`. Aucun autre fichier à modifier : la source est choisie dans `src/data/index.ts`.
+
+## Scores et fiche de match (24 octobre 2026)
+
+La fiche distingue Résumé, Statistiques et Analyse Apex. Le score final est indépendant de la disponibilité du bonus : `resultat.bonus_en_attente` laisse le verdict du bonus à null et permet une nouvelle évaluation, pendant trois jours maximum après le coup d’envoi. `resultat.mis_a_jour_le` indique la date de confirmation du résultat. Les pronostics ne sont jamais recalculés à cette occasion.
+
+Le workflow évalue chaque heure les rencontres dont le coup d’envoi remonte à au moins deux heures ; seul un statut terminé fourni par la source autorise un score final. GitHub Actions peut démarrer en retard : il ne s’agit pas d’un service de scores en direct. La fiche relit les données chaque minute lorsqu’elle est visible et possède un bouton Actualiser.
+
+Une rencontre passée sans confirmation affiche Résultat indisponible ou Statut en attente. Les statistiques comparées décrivent les rencontres antérieures. Compositions, chronologie et H2H restent explicitement indisponibles lorsque la fiche ne les fournit pas. La publicité est limitée à 310 px.

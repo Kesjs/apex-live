@@ -106,6 +106,10 @@ export interface ResultatFiche {
   score: boolean | null
   /** Score final, ex. « 2-1 ». */
   score_final?: string
+  /** Actualisation du résultat, distincte de la génération du pronostic. */
+  mis_a_jour_le?: string
+  /** Le score final est publié ; les événements du bonus restent à confirmer. */
+  bonus_en_attente?: boolean
 }
 
 /** Statistiques utiles d'une équipe sur ses derniers matchs (5 au plus). Les parts vont de 0 à 1. */

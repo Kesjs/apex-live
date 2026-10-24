@@ -73,7 +73,7 @@ export class Store implements Stockage {
 
   async aEvaluer(avantIso: string): Promise<LigneAEvaluer[]> {
     const lignes = this.db
-      .prepare('SELECT match_id, date_heure, fiche, interne FROM fiches WHERE evalue = 0 AND date_heure < ? ORDER BY date_heure')
+      .prepare("SELECT match_id, date_heure, fiche, interne FROM fiches WHERE (evalue = 0 OR json_extract(fiche, '$.resultat.bonus_en_attente') = 1) AND date_heure < ? ORDER BY date_heure")
       .all(avantIso) as Array<{ match_id: string; date_heure: string; fiche: string; interne: string | null }>
     return lignes.map(l => ({
       match_id: l.match_id,

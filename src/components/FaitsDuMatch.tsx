@@ -8,7 +8,7 @@ export function FaitsDuMatch({ fiche }: { fiche: Prediction }) {
   if (faits.length === 0) return null
   return (
     <section aria-labelledby="faits" className="stack-sm">
-      <SectionTitle id="faits">Faits du match</SectionTitle>
+      <SectionTitle id="faits">Faits avant le match</SectionTitle>
       <ul className="facts">
         {faits.map((f, i) => (
           <li key={i} className="card fact">

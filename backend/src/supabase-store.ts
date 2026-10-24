@@ -51,7 +51,7 @@ export class SupabaseStore implements Stockage {
 
   async aEvaluer(avantIso: string): Promise<LigneAEvaluer[]> {
     const lignes = await this.toutesLesLignes<{ match_id: string; date_heure: string; fiche: Prediction; interne: Interne | null }>(
-      '/fiches?select=match_id,date_heure,fiche,interne&evalue=eq.false&date_heure=lt.' + encodeURIComponent(avantIso) + '&order=date_heure.asc',
+      '/fiches?select=match_id,date_heure,fiche,interne&or=(evalue.eq.false,fiche->resultat->>bonus_en_attente.eq.true)&date_heure=lt.' + encodeURIComponent(avantIso) + '&order=date_heure.asc',
     )
     return lignes
   }

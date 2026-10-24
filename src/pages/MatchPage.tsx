@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react'
-import type { CSSProperties } from 'react'
 import { provider } from '../data'
 import type { Prediction } from '../domain/contracts'
-import { BandeauPronostic } from '../components/BandeauPronostic'
 import ApexPromoCarousel from '../components/ApexPromoCarousel'
 import { Crest } from '../components/Crest'
 import { FaitsDuMatch } from '../components/FaitsDuMatch'
@@ -16,260 +14,120 @@ import { DetailSkeleton } from '../components/Skeletons'
 import { StatsComparees } from '../components/StatsComparees'
 import { Chip, Disclaimer, EmptyState, ErrorState, SectionTitle } from '../components/ui'
 import { useFavoris } from '../lib/favoris'
-import { heureCourte, jourDeFiche, quandLabel } from '../lib/format'
+import { heureCourte } from '../lib/format'
+import { matchStatus } from '../lib/match-status'
 import { Link, useRouter } from '../lib/router'
-import { usePrefs } from '../lib/prefs'
 import { useAsync } from '../lib/useAsync'
-import { AnalysisTimeline, ConfidenceCard, FactorsCard, MatchSummary } from '../components/MatchInsights'
+import { FactorsCard, MatchSummary } from '../components/MatchInsights'
 import '../components/MatchInsights.css'
+import './MatchPage.css'
 
-function Fiche({ fiche, retour }: { fiche: Prediction; retour: string }) {
-  const { estFavori, basculer } = useFavoris()
-  const { cotes } = usePrefs()
-  const favori = estFavori(fiche.match_id)
-  const p = fiche.pronostics
+type Tab = 'resume' | 'stats' | 'analyse'
+const dateMatch = (iso: string) => new Date(iso).toLocaleString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+
+function Resultat({ fiche }: { fiche: Prediction }) {
   const r = fiche.resultat
-  const [onglet, setOnglet] = useState<'apercu' | 'statistiques' | 'avant' | 'apres'>('apercu')
+  const status = matchStatus(fiche)
+  return <section className="card match-result" aria-labelledby="resultat">
+    <SectionTitle id="resultat">{status.final ? 'Résultat final' : status.label}</SectionTitle>
+    {status.final ? <>
+      <p className="result-headline">{fiche.equipes.domicile} <strong className="tn">{status.score}</strong> {fiche.equipes.exterieur}</p>
+      {r.statut === 'evalue' && fiche.pronostics && <>
+        <h3>Bilan des pronostics publiés</h3>
+        <div className="rmarks"><ResultMark label="Issue" valeur={r.issue} /><ResultMark label="Buts" valeur={r.buts} /><ResultMark label="Bonus" valeur={r.bonus} /><ResultMark label="Score exact" valeur={r.score} /></div>
+        {r.bonus_en_attente && <p className="muted small">Le résultat du bonus attend les statistiques d’événements. Le score final est confirmé.</p>}
+      </>}
+    </> : <p className="muted">{r.statut === 'annule' ? 'La rencontre est annulée ou reportée par la source. Les pronostics ne sont pas évalués.' : status.pending ? 'Le coup d’envoi prévu est passé. La source n’a pas encore confirmé le résultat ; aucun score ni statut en direct n’est déduit de l’heure.' : 'Le résultat sera affiché ici dès sa confirmation par la source.'}</p>}
+  </section>
+}
 
+function Fiche({ fiche, retour, actualiser, enCours, erreur }: { fiche: Prediction; retour: string; actualiser: () => void; enCours: boolean; erreur: string | null }) {
+  const { estFavori, basculer } = useFavoris()
+  const [onglet, setOnglet] = useState<Tab>('resume')
+  const [now, setNow] = useState(Date.now)
+  const status = matchStatus(fiche, now)
+  const p = fiche.pronostics
   useEffect(() => {
     document.title = fiche.equipes.domicile + ' – ' + fiche.equipes.exterieur + ' · Apex'
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000)
+    return () => window.clearInterval(timer)
   }, [fiche])
-
-  return (
-    <div className="page-body">
+  return <div className="page-body match-page">
+    <header className="match-header card">
       <div className="topbar">
-        <Link to={retour} className="icon-btn" aria-label="Retour">
-          <Icon name="back" size={20} strokeWidth={2} />
-        </Link>
-        <Chip>{fiche.competition}</Chip>
-        <button
-          type="button"
-          className={'icon-btn' + (favori ? ' is-on' : '')}
-          aria-pressed={favori}
-          aria-label={favori ? 'Retirer des favoris' : 'Ajouter aux favoris'}
-          onClick={() => basculer(fiche)}
-        >
-          <Icon name="star" size={20} filled={favori} />
-        </button>
+        <Link to={retour} className="icon-btn" aria-label="Retour"><Icon name="back" size={20} /></Link>
+        <div className="match-heading"><Chip>{fiche.competition}</Chip><time dateTime={fiche.date_heure}>{dateMatch(fiche.date_heure)}</time></div>
+        <button type="button" className={'icon-btn' + (estFavori(fiche.match_id) ? ' is-on' : '')} aria-pressed={estFavori(fiche.match_id)} aria-label={estFavori(fiche.match_id) ? 'Retirer des favoris' : 'Ajouter aux favoris'} onClick={() => basculer(fiche)}><Icon name="star" size={20} filled={estFavori(fiche.match_id)} /></button>
       </div>
-
       <section className="match-hero" aria-label="Match">
-        <div className="featured-team">
-          <Crest nom={fiche.equipes.domicile} logoUrl={fiche.logos?.domicile} taille="xl" />
-          <h1>{fiche.equipes.domicile}</h1>
-        </div>
-        <div className="match-hero-mid">
-          <p className="match-hero-time tn">{r.statut === 'evalue' && r.score_final ? r.score_final : heureCourte(fiche.date_heure)}</p>
-          <p className="muted small">{r.statut === 'evalue' ? 'Match terminé' : quandLabel(jourDeFiche(fiche))}</p>
-        </div>
-        <div className="featured-team">
-          <Crest nom={fiche.equipes.exterieur} logoUrl={fiche.logos?.exterieur} taille="xl" />
-          <h1>{fiche.equipes.exterieur}</h1>
-        </div>
+        <div className="featured-team"><Crest nom={fiche.equipes.domicile} logoUrl={fiche.logos?.domicile} taille="xl" /><h1>{fiche.equipes.domicile}</h1></div>
+        <div className="match-hero-mid"><p className="match-hero-time tn">{status.score ?? heureCourte(fiche.date_heure)}</p><Chip ton={status.final ? 'ac' : 'muet'}>{status.label}</Chip></div>
+        <div className="featured-team"><Crest nom={fiche.equipes.exterieur} logoUrl={fiche.logos?.exterieur} taille="xl" /><h1>{fiche.equipes.exterieur}</h1></div>
       </section>
-
-      <div className="meta-chips">
-        {r.statut === 'evalue' ? (
-          <Chip ton="muet">
-            <Icon name="check" size={14} strokeWidth={2} />
-            Match terminé
-          </Chip>
-        ) : (
-          <Chip ton="ac">
-            <Icon name="clock" size={14} strokeWidth={2} />
-            <KickoffCountdown iso={fiche.date_heure} />
-          </Chip>
-        )}
-        {fiche.meta.donnees_limitees && <Chip ton="am">Peu de matchs récents : pronostic plus fragile</Chip>}
-        {fiche.meta.retrocalcul && <Chip ton="muet">Rétro-calcul : données d'avant le match</Chip>}
-        {fiche.meta.prediction_externe && <Chip ton="muet">Comparaison API-Football · Apex reste le modèle principal</Chip>}
-        {cotes && fiche.meta.cotes_observees_le && <Chip ton="muet">Cotes de {heureCourte(fiche.meta.cotes_observees_le)}</Chip>}
-      </div>
-
-      <nav className="match-tabs" aria-label="Sections du match">
-        {([
-          ['apercu', 'Aperçu'],
-          ['statistiques', 'Statistiques'],
-          ['avant', 'Avant-match'],
-          ['apres', 'Après-match'],
-        ] as const).map(([cle, label]) => (
-          <button key={cle} type="button" className={onglet === cle ? 'is-active' : ''} aria-selected={onglet === cle} onClick={() => setOnglet(cle)}>
-            {label}
-          </button>
-        ))}
-      </nav>
-
-      {onglet === 'apercu' && <div className="detail-grid">
-        <div className="stack">
-          <BandeauPronostic fiche={fiche} />
-          <MatchSummary fiche={fiche} />
-
-          <section className="stack-sm" aria-labelledby="offre-partenaire">
-            <SectionTitle id="offre-partenaire" aside={<span className="muted small">Publicité</span>}>
-              Offre partenaire
-            </SectionTitle>
-            <ApexPromoCarousel />
-            <p className="muted small">Contenu sponsorisé distinct de l’analyse Apex. Le code promo ne garantit aucun gain.</p>
-          </section>
-
-          {fiche.synthese && (
-            <section className="card synthese rise" aria-labelledby="synthese">
-              <div className="synthese-head">
-                <Icon name="sparkle" size={18} />
-                <h2 id="synthese">Synthèse Apex</h2>
-              </div>
-              <p>{fiche.synthese}</p>
-            </section>
-          )}
-          <FactorsCard fiche={fiche} />
-          <AnalysisTimeline fiche={fiche} />
-
-          {!p && (
-            <section className="card state" role="status">
-              <span className="state-icon">
-                <Icon name="info" size={24} />
-              </span>
-              <h2>Pas de pronostic pour ce match</h2>
-              <p>{fiche.raison_absence ?? 'Les données disponibles ne permettent pas de proposer un pronostic fiable.'}</p>
-            </section>
-          )}
-
-          {p && (
-            <section aria-labelledby="piliers" className="stack">
-              <SectionTitle id="piliers" aside={<span className="muted small">Du signal le plus solide au plus incertain</span>}>
-                Les 4 pronostics
-              </SectionTitle>
-              <p className="muted small">Chaque carte montre ce que les données permettent d’estimer. Une carte sans signal signifie que nous préférons ne rien inventer.</p>
-              <IssueCard p={p.issue} valeur={fiche.value} delai={1} />
-              <ButsCard p={p.buts} valeur={fiche.value} delai={2} />
-              <BonusCard p={p.bonus} delai={3} />
-              <ScoresCard scores={p.scores} delai={4} />
-            </section>
-          )}
-        </div>
-
-        <aside className="stack" aria-label="Contexte">
-          <ConfidenceCard fiche={fiche} />
-          {r.statut === 'evalue' && (
-            <section className="card side-card rise" aria-labelledby="resultat">
-              <h2 id="resultat">Résultat du match</h2>
-              {r.score_final && <p className="final-score tn">{r.score_final}</p>}
-              <div className="rmarks">
-                <ResultMark label="Issue" valeur={r.issue} />
-                <ResultMark label="Buts" valeur={r.buts} />
-                <ResultMark label="Bonus" valeur={r.bonus} />
-                <ResultMark label="Score" valeur={r.score} />
-              </div>
-            </section>
-          )}
-
-          {r.statut !== 'evalue' && (
-            <section className="card state state-compact rise" aria-labelledby="resultat-en-attente">
-              <span className="state-icon">
-                <Icon name="clock" size={22} />
-              </span>
-              <h2 id="resultat-en-attente">Résultat après le match</h2>
-              <p>Le score et l’évaluation des prédictions apparaîtront ici après le coup de sifflet final.</p>
-            </section>
-          )}
-
-          {fiche.forme && (
-            <section aria-labelledby="forme" className="stack-sm">
-              <SectionTitle id="forme">Forme récente</SectionTitle>
-              <FormStrip forme={fiche.forme} domicile={fiche.equipes.domicile} exterieur={fiche.equipes.exterieur} />
-            </section>
-          )}
-
-        </aside>
-      </div>}
-
-      {onglet === 'statistiques' && <section className="detail-grid">
-        <div className="stack">
-          {fiche.stats ? (
-            <>
-              <StatsComparees fiche={fiche} />
-              <PlusMoins fiche={fiche} />
-            </>
-          ) : (
-            <section className="card state state-compact" role="status">
-              <span className="state-icon"><Icon name="info" size={22} /></span>
-              <p>Statistiques détaillées indisponibles pour ce match.</p>
-            </section>
-          )}
-          <section className="card side-card"><h2>Données utilisées</h2><p className="muted small">Les probabilités s’appuient sur les 5 derniers matchs de chaque équipe, toutes compétitions confondues. Les bonus nécessitent en plus des données d’événements fiables. Ces estimations aident à lire le match et ne garantissent aucun résultat.</p></section>
-        </div>
-        <aside className="stack">{fiche.forme ? <FormStrip forme={fiche.forme} domicile={fiche.equipes.domicile} exterieur={fiche.equipes.exterieur} /> : <div className="card state state-compact"><span className="state-icon"><Icon name="info" size={22} /></span><p>Forme récente indisponible.</p></div>}</aside>
-      </section>}
-
-      {onglet === 'avant' && (
-        <section className="stack">
+      <div className="match-freshness"><span>{status.label === 'À venir' ? <KickoffCountdown iso={fiche.date_heure} /> : status.final ? 'Score confirmé par ' + fiche.meta.source_stats : 'En attente de confirmation par la source'}</span><button type="button" className="refresh-match" disabled={enCours} onClick={actualiser}>{enCours ? 'Actualisation…' : 'Actualiser'}</button></div>
+      {fiche.resultat.mis_a_jour_le && <p className="muted small center">Résultat actualisé le {dateMatch(fiche.resultat.mis_a_jour_le)}</p>}
+      {erreur && <p role="status" className="refresh-error">{erreur} Les dernières données chargées restent affichées.</p>}
+    </header>
+    <nav className="match-tabs" aria-label="Sections du match">{([['resume', 'Résumé'], ['stats', 'Statistiques'], ['analyse', 'Analyse Apex']] as const).map(([id, label]) => <button key={id} type="button" aria-pressed={onglet === id} aria-controls="match-content" className={onglet === id ? 'is-active' : ''} onClick={() => setOnglet(id)}>{label}</button>)}</nav>
+    <div className="detail-grid" id="match-content">
+      <div className="stack match-main">
+        {onglet === 'resume' && <>
+          {status.label !== 'À venir' && <Resultat fiche={fiche} />}
           <FaitsDuMatch fiche={fiche} />
-          {fiche.forme ? (
-            <section aria-labelledby="forme-avant" className="stack-sm">
-              <SectionTitle id="forme-avant">Forme récente</SectionTitle>
-              <FormStrip forme={fiche.forme} domicile={fiche.equipes.domicile} exterieur={fiche.equipes.exterieur} />
-            </section>
-          ) : (
-            <section className="card state state-compact" role="status">
-              <span className="state-icon"><Icon name="info" size={22} /></span>
-              <p>Pas assez de matchs récents pour établir des faits marquants.</p>
-            </section>
-          )}
-        </section>
-      )}
-
-      {onglet === 'apres' && <section className="card state" role="status">
-        <span className="state-icon"><Icon name={r.statut === 'evalue' ? 'check' : 'clock'} size={24} /></span>
-        <h2>{r.statut === 'evalue' ? 'Évaluation après-match disponible' : 'Évaluation après-match en attente'}</h2>
-        <p>{r.statut === 'evalue' ? 'Le résultat final et la réussite de chaque pilier sont visibles dans l’aperçu du match.' : 'Cette section sera remplie après le score final et l’évaluation des quatre prédictions.'}</p>
-      </section>}
-
-      <p className="muted small center">Les pourcentages sont des estimations statistiques, pas des certitudes.</p>
-      <Disclaimer />
+          {fiche.stats && <StatsComparees fiche={fiche} />}
+          <section className="card match-coverage"><h2>Compositions et événements</h2><p className="muted small">Les compositions, buteurs, minutes de jeu et statistiques en direct ne sont pas disponibles dans la source actuelle. Ils seront affichés uniquement avec des données confirmées.</p></section>
+          {p && <button className="btn btn-secondary" type="button" onClick={() => setOnglet('analyse')}>{status.final ? 'Voir l’analyse publiée avant le match' : 'Comprendre les pronostics Apex'}<Icon name="chevron" size={16} /></button>}
+        </>}
+        {onglet === 'stats' && <>
+          {fiche.stats ? <><StatsComparees fiche={fiche} /><PlusMoins fiche={fiche} /></> : <section className="card state"><h2>Statistiques indisponibles</h2><p>Aucune statistique détaillée n’est disponible pour cette rencontre.</p></section>}
+          <section className="card match-coverage"><h2>Périmètre des données</h2><p className="muted small">Ces chiffres décrivent les rencontres précédant le coup d’envoi. Ils ne représentent pas la possession, les tirs ou les événements de ce match. Source : {fiche.meta.source_stats}.</p></section>
+        </>}
+        {onglet === 'analyse' && <>
+          <div className="analysis-notice"><Icon name="info" size={18} /><p>{status.final ? 'Analyse d’avant-match conservée pour comparer les prévisions au résultat réel.' : 'Estimations d’avant-match : les probabilités ne garantissent aucun résultat.'}</p></div>
+          {fiche.meta.retrocalcul && <Chip ton="muet">Rétro-calcul avec les données antérieures au match</Chip>}
+          {fiche.meta.donnees_limitees && <Chip ton="am">Historique incomplet : estimations plus fragiles</Chip>}
+          {p ? <><MatchSummary fiche={fiche} /><div className="prediction-grid"><IssueCard p={p.issue} valeur={fiche.value} delai={0} /><ButsCard p={p.buts} valeur={fiche.value} delai={0} /><BonusCard p={p.bonus} delai={0} /><ScoresCard scores={p.scores} delai={0} /></div><FactorsCard fiche={fiche} /></> : <section className="card state"><h2>Pas de pronostic publié</h2><p>{fiche.raison_absence ?? 'Les données disponibles sont insuffisantes.'}</p></section>}
+          {status.final && <Resultat fiche={fiche} />}
+          <p className="muted small">Analyse générée le {dateMatch(fiche.meta.genere_le)} · Moteur {fiche.meta.version_moteur}.</p>
+        </>}
+      </div>
+      <aside className="stack match-context" aria-label="Contexte du match">
+        {fiche.forme && <section className="stack-sm"><SectionTitle id="forme">Forme avant le match</SectionTitle><FormStrip forme={fiche.forme} domicile={fiche.equipes.domicile} exterieur={fiche.equipes.exterieur} /></section>}
+        <section className="card match-coverage"><h2>Confrontations directes</h2><p className="muted small">L’historique des confrontations entre ces deux équipes n’est pas fourni dans cette fiche.</p></section>
+        <section className="match-ad stack-sm" aria-label="Offre partenaire"><SectionTitle id="offre-partenaire" aside={<span className="muted small">Publicité</span>}>Partenaire</SectionTitle><ApexPromoCarousel /><p className="muted small">Contenu sponsorisé, indépendant de l’analyse Apex.</p></section>
+      </aside>
     </div>
-  )
+    <Disclaimer />
+  </div>
 }
 
 export default function MatchPage({ matchId }: { matchId: string }) {
   const { precedent } = useRouter()
   const [etat, reessayer] = useAsync(() => provider.getMatch(matchId), [matchId])
-  const retour = precedent && precedent !== '/reglages' ? precedent : '/'
-
-  if (etat.status === 'loading') {
-    return (
-      <div className="page-body">
-        <div className="topbar">
-          <Link to={retour} className="icon-btn" aria-label="Retour">
-            <Icon name="back" size={20} strokeWidth={2} />
-          </Link>
-        </div>
-        <div style={{ '--i': 0 } as CSSProperties}>
-          <DetailSkeleton />
-        </div>
-      </div>
-    )
+  const [fresh, setFresh] = useState<Prediction | null>(null)
+  const [enCours, setEnCours] = useState(false)
+  const [erreur, setErreur] = useState<string | null>(null)
+  const fiche = fresh?.match_id === matchId ? fresh : etat.status === 'ready' ? etat.data : null
+  useEffect(() => {
+    let active = true
+    let busy = false
+    const refresh = async () => {
+      if (document.visibilityState !== 'visible' || busy) return
+      busy = true
+      try { const next = await provider.getMatch(matchId); if (active && next) setFresh(next) } catch { /* A background failure keeps the last confirmed data. */ }
+      finally { busy = false }
+    }
+    const timer = window.setInterval(refresh, 60_000)
+    return () => { active = false; window.clearInterval(timer) }
+  }, [matchId])
+  async function actualiser() {
+    setEnCours(true); setErreur(null)
+    try { const next = await provider.getMatch(matchId); if (next) setFresh(next); else setErreur('La rencontre est momentanément indisponible.') }
+    catch { setErreur('Impossible d’actualiser la rencontre.') }
+    finally { setEnCours(false) }
   }
-  if (etat.status === 'error') {
-    return (
-      <div className="page-body">
-        <ErrorState message={etat.error.message} onRetry={reessayer} />
-      </div>
-    )
-  }
-  if (etat.data === null) {
-    return (
-      <div className="page-body">
-        <EmptyState
-          titre="Match introuvable"
-          texte="Ce match n'existe pas ou n'est plus disponible."
-          action={
-            <Link to="/matchs" className="btn btn-secondary">
-              Voir les matchs
-            </Link>
-          }
-        />
-      </div>
-    )
-  }
-  return <Fiche fiche={etat.data} retour={retour} />
+  if (!fiche && etat.status === 'loading') return <div className="page-body"><DetailSkeleton /></div>
+  if (!fiche && etat.status === 'error') return <div className="page-body"><ErrorState message={etat.error.message} onRetry={reessayer} /></div>
+  if (!fiche) return <div className="page-body"><EmptyState titre="Match introuvable" texte="Cette rencontre n’est plus disponible." action={<Link to="/matchs" className="btn btn-secondary">Voir les matchs</Link>} /></div>
+  return <Fiche key={matchId} fiche={fiche} retour={precedent && precedent !== '/reglages' ? precedent : '/'} actualiser={actualiser} enCours={enCours} erreur={erreur} />
 }

@@ -2,7 +2,7 @@ import type { ResultatFiche } from '../../src/domain/contracts.ts'
 import type { Interne, ResultatReel, Source } from './types.ts'
 import type { Stockage } from './store.ts'
 
-const DELAI_APRES_COUP_ENVOI_MS = 3 * 3600_000
+const DELAI_APRES_COUP_ENVOI_MS = 2 * 3600_000
 
 export function jugerIssue(cle: string, d: number, e: number): boolean {
   switch (cle) {
@@ -55,6 +55,7 @@ export function evaluerFiche(interne: Interne | null, r: ResultatReel): Resultat
 export async function evaluerTermines(store: Stockage, source: Source, maintenant: Date = new Date()): Promise<number> {
   const limite = new Date(maintenant.getTime() - DELAI_APRES_COUP_ENVOI_MS).toISOString()
   const lignes = await store.aEvaluer(limite)
+  if (!lignes.length) return 0
   const resultats = source.resultats
     ? await source.resultats(lignes.map(ligne => ligne.match_id))
     : null
@@ -62,11 +63,13 @@ export async function evaluerTermines(store: Stockage, source: Source, maintenan
   for (const ligne of lignes) {
     const reel = resultats ? (resultats.get(ligne.match_id) ?? null) : await source.resultat(ligne.match_id)
     if (!reel) continue
-    // Les stats de cartons/corners/fautes arrivent parfois avec quelques jours de retard : on patiente jusqu'à 3 jours.
+    // Publier le score immédiatement ; compléter le bonus pendant au plus trois jours.
     const bonus = ligne.interne?.bonus
-    if (reel.statut === 'termine' && bonus && typeof reel.bonus?.[bonus.categorie] !== 'number' && maintenant.getTime() - Date.parse(ligne.date_heure) < 3 * 86_400_000) continue
+    const bonusEnAttente = reel.statut === 'termine' && Boolean(bonus) && typeof reel.bonus?.[bonus!.categorie] !== 'number' && maintenant.getTime() - Date.parse(ligne.date_heure) < 3 * 86_400_000
     const res = evaluerFiche(ligne.interne, reel)
     if (!res) continue
+    res.mis_a_jour_le = maintenant.toISOString()
+    res.bonus_en_attente = bonusEnAttente
     await store.marquerEvalue(ligne.match_id, res)
     n++
   }

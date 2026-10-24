@@ -37,7 +37,8 @@ export function StatsComparees({ fiche }: { fiche: Prediction }) {
   ]
   return (
     <section className="card data-card" aria-labelledby="stats-equipes">
-      <SectionTitle id="stats-equipes">Statistiques comparées</SectionTitle>
+      <SectionTitle id="stats-equipes">Comparaison avant le match</SectionTitle>
+      <p className="muted small cmp-note">Historique : {s.domicile.matchs} match(s) côté domicile, {s.exterieur.matchs} côté extérieur, avant cette rencontre. Source : {fiche.meta.source_stats}.</p>
       <div className="stat-table">
         <div className="stat-row stat-head">
           <span>{fiche.equipes.domicile}</span>
@@ -50,9 +51,9 @@ export function StatsComparees({ fiche }: { fiche: Prediction }) {
           const dMieux = l.plusEstMieux !== null && !egal && !gMieux
           return (
             <div className="stat-row" key={l.label}>
-              <Valeur v={l.g} meilleur={gMieux} texte={l.format} moyenne={l.moyenne} />
+              {s.domicile.matchs === 0 ? <span>Indisponible</span> : <Valeur v={l.g} meilleur={gMieux} texte={l.format} moyenne={l.moyenne} />}
               <span>{l.label}</span>
-              <Valeur v={l.d} meilleur={dMieux} texte={l.format} moyenne={l.moyenne} />
+              {s.exterieur.matchs === 0 ? <span>Indisponible</span> : <Valeur v={l.d} meilleur={dMieux} texte={l.format} moyenne={l.moyenne} />}
             </div>
           )
         })}
