@@ -30,26 +30,25 @@
 }
 
 /* Mode sombre adapté à Apex */
-[data-theme='dark'] .apex-chat-theme,
 .apex-chat-dark {
-  --surface: #15211c;
-  --canvas: #0f1815;
-  --page: #080e0c;
-  --inset: #0a120f;
-  --hover: #1b2a24;
-  --hover-2: #223229;
-  --ink: #e9f2ed;
-  --ink-2: #8ca196;
-  --ink-3: #587163;
-  --line: #223229;
-  --line-strong: #2ee6a0;
-  --field: #0d1713;
-  --accent: #2ee6a0;
-  --accent-ink: #2ee6a0;
-  --green: #2ee6a0;
-  --orange: #f4b941;
-  --red: #ff9a9a;
-  --shadow-card: 0 0 0 1px #223229, 0 4px 14px rgba(0, 0, 0, 0.45);
+  --surface: #ffffff;
+  --canvas: #f8fafb;
+  --page: #ffffff;
+  --inset: #f5f7f8;
+  --hover: #eef5f1;
+  --hover-2: #e4ece8;
+  --ink: #1b2c3f;
+  --ink-2: #697889;
+  --ink-3: #9aa8b3;
+  --line: #e1e8e5;
+  --line-strong: #b8c9c1;
+  --field: #f5f7f8;
+  --accent: #0a9f68;
+  --accent-ink: #087b50;
+  --green: #0a9f68;
+  --orange: #b57900;
+  --red: #bd3d46;
+  --shadow-card: 0 0 0 1px #e1e8e5, 0 2px 8px rgba(27, 44, 63, 0.06);
 }
 
 @keyframes fade-up {

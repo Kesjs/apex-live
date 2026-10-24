@@ -245,6 +245,20 @@ main {
   animation: page-in 0.4s var(--ease) both;
 }
 
+.apex-ai-head { min-width: 0; }
+.apex-ai-head > div:first-child { min-width: 0; }
+.apex-ai-head > div:first-child > span:nth-child(2) { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.apex-ai-actions { flex-shrink: 0; }
+.apex-ai-toggle { min-width: 78px; min-height: 34px; justify-content: center; }
+@media (max-width: 600px) {
+  .apex-ai-bar { padding-left: 8px !important; padding-right: 8px !important; }
+  .apex-ai-head { padding: 8px 10px !important; gap: 6px !important; flex-wrap: nowrap !important; }
+  .apex-ai-head > div:first-child > span:nth-child(2) span { display: none; }
+  .apex-ai-actions { gap: 6px !important; }
+  .apex-ai-actions > div { display: none !important; }
+  .apex-ai-toggle { min-width: 74px; padding-left: 8px !important; padding-right: 8px !important; }
+}
+
 .community-page { max-width: 760px; }
 .community-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
 .community-heading h1 { margin:2px 0 4px; font-size:clamp(28px,5vw,40px); }

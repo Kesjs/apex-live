@@ -2,6 +2,7 @@ import { useState } from 'react'
 import ChatComposer from './ui/chat'
 import { useAiCredits } from '../lib/ai-credits'
 import { useRouter } from '../lib/router'
+import { Icon } from './Icon'
 
 export function ApexAiTopBar() {
   const [ouvert, setOuvert] = useState(false)
@@ -31,18 +32,16 @@ export function ApexAiTopBar() {
     >
       <div
         style={{
-          background: 'linear-gradient(135deg, rgba(21, 33, 28, 0.88), rgba(15, 24, 21, 0.92))',
-          backdropFilter: 'blur(16px)',
-          WebkitBackdropFilter: 'blur(16px)',
-          border: '1px solid rgba(46, 230, 160, 0.22)',
+          background: '#ffffff',
+          border: '1px solid var(--ln)',
           borderRadius: '14px',
-          boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.45), 0 0 16px -2px rgba(46, 230, 160, 0.08)',
+          boxShadow: '0 2px 10px rgba(27, 44, 63, 0.05)',
           overflow: 'hidden',
           transition: 'all 250ms cubic-bezier(0.2, 0.7, 0.2, 1)',
         }}
       >
         {/* Bandeau supérieur toujours visible sous la navbar */}
-        <div
+        <div className="apex-ai-head"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -67,10 +66,10 @@ export function ApexAiTopBar() {
                 fontSize: '13px',
               }}
             >
-              ✦
+              <Icon name="sparkle" size={14} />
             </span>
             <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--tx, #e9f2ed)' }}>
-              Apex IA{' '}
+              Apex IA
               <span
                 style={{
                   fontSize: '11px',
@@ -79,7 +78,7 @@ export function ApexAiTopBar() {
                   marginLeft: '4px',
                 }}
               >
-                (Style WhoScored · Gemini Flash)
+                Assistant de match
               </span>
             </span>
             {titreMatch && (
@@ -99,10 +98,11 @@ export function ApexAiTopBar() {
           </div>
 
           {/* Statut des crédits & Bouton Toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 'auto' }}>
+          <div className="apex-ai-actions" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 'auto' }}>
             {/* Jauge des crédits journaliers */}
             <div
               title={`Crédits gratuits d'analyses IA. Prochaine recharge dans ${timeUntilReset}.`}
+              className="apex-ai-toggle"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -115,7 +115,7 @@ export function ApexAiTopBar() {
                 fontWeight: 500,
               }}
             >
-              <span>⚡ {creditsLeft}/{maxDailyCredits} crédits aujourd'hui</span>
+              <span>{creditsLeft}/{maxDailyCredits} crédits</span>
             </div>
 
             {/* Bouton pour déplier / replier */}
@@ -138,8 +138,8 @@ export function ApexAiTopBar() {
                 transition: 'all 150ms ease',
               }}
             >
-              <span>{ouvert ? 'Masquer' : 'Poser une question'}</span>
-              <span style={{ fontSize: '10px' }}>{ouvert ? '▲' : '▼'}</span>
+              <span>{ouvert ? 'Fermer' : 'Ouvrir'}</span>
+              <Icon name={ouvert ? 'x' : 'down'} size={13} />
             </button>
           </div>
         </div>
@@ -153,7 +153,7 @@ export function ApexAiTopBar() {
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              background: 'rgba(10, 18, 15, 0.6)',
+              background: '#ffffff',
               animation: 'fade-up 250ms ease both',
             }}
           >
@@ -169,9 +169,9 @@ export function ApexAiTopBar() {
               }}
             >
               <span>
-                💡 Posez une question sur les xG, la forme récente, ou les points faibles tactiques.
+                Posez une question sur ce match.
               </span>
-              <span>Recharge dans {timeUntilReset}</span>
+              <span>{timeUntilReset}</span>
             </div>
 
             <ChatComposer

@@ -97,11 +97,11 @@ export default function ChatComposer({
     resetToMaxForTesting,
   } = useAiCredits();
 
-  const [phase, setPhase] = useState<Phase>("done");
+  const [phase, setPhase] = useState<Phase>("idle");
   const [draft, setDraft] = useState("");
-  const [submitted, setSubmitted] = useState(`Analyse l'impact du pressing de ${dom} face à ${ext}`);
+  const [submitted, setSubmitted] = useState("");
   const [tab, setTab] = useState("Tactique");
-  const [tabs] = useState(["Tactique", "Stats xG", "Pronos"]);
+  const [tabs] = useState(["Question", "Stats", "Pronos"]);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Réponses dynamiques générées
@@ -183,10 +183,10 @@ export default function ChatComposer({
         width: "100%",
         maxWidth: "480px",
         borderRadius: "var(--radius-card, 14px)",
-        background: "linear-gradient(180deg, rgba(19, 31, 26, 0.98) 0%, rgba(13, 22, 19, 0.98) 100%)",
+        background: "#ffffff",
         color: "var(--ink)",
-        boxShadow: "0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 1px 1px rgba(46, 230, 160, 0.15)",
-        border: "1px solid rgba(46, 230, 160, 0.18)",
+        boxShadow: "0 2px 10px rgba(27, 44, 63, 0.06)",
+        border: "1px solid var(--ln)",
         fontFamily: "var(--font, 'Manrope', system-ui, sans-serif)",
       }}
     >
@@ -240,7 +240,7 @@ export default function ChatComposer({
               fontWeight: 500,
             }}
           >
-            ⚡ {creditsLeft}/{maxDailyCredits} aujourd'hui
+            {creditsLeft}/{maxDailyCredits} crédits
           </span>
 
           {/* Action icon : reset / refresh */}
@@ -335,7 +335,7 @@ export default function ChatComposer({
                 animation: "pulse-subtle 1.2s infinite ease-in-out",
               }}
             />
-            <span>Analyse Gemini en cours...</span>
+            <span>Analyse en cours...</span>
           </div>
         )}
       </div>
@@ -355,7 +355,7 @@ export default function ChatComposer({
             fontWeight: 500,
           }}
         >
-          <span>⏳ Pause anti-spam active</span>
+          <span>Pause anti-spam active</span>
           <span>Prêt dans {cooldownRemaining}s</span>
         </div>
       )}
@@ -374,7 +374,7 @@ export default function ChatComposer({
             fontWeight: 500,
           }}
         >
-          <span>🚫 Quota journalier atteint (recharge dans {timeUntilReset})</span>
+          <span>Quota atteint · recharge dans {timeUntilReset}</span>
           <button
             type="button"
             onClick={resetToMaxForTesting}
@@ -437,7 +437,7 @@ export default function ChatComposer({
 
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <span style={{ fontSize: "10px", color: "var(--ink-3)" }}>
-              Gemini 2.5 Flash · WhoScored AI
+              Réponse Apex IA
             </span>
 
             <button
