@@ -3,7 +3,7 @@ import { heureCourte, quandLabel, jourDeFiche } from '../lib/format'
 import { Link } from '../lib/router'
 import { Crest } from './Crest'
 import { Icon } from './Icon'
-import { Chip, Compteur, Cote, ProbBar, Risque } from './ui'
+import { Chip, Risque } from './ui'
 
 /** Match vedette : les 4 pronostics en un coup d'œil. */
 export function FeaturedMatch({ fiche }: { fiche: Prediction }) {
@@ -40,19 +40,15 @@ export function FeaturedMatch({ fiche }: { fiche: Prediction }) {
         <div className="tile">
           <p className="kicker">1 · Issue</p>
           <p className="tile-value">{p.issue.court ?? p.issue.selection}</p>
-          <ProbBar valeur={p.issue.probabilite} delai={200} />
           <p className="tile-foot">
-            <span className="tn accent"><Compteur valeur={p.issue.probabilite} delai={200} /></span>
-            <Cote valeur={p.issue.cote} mode="texte" />
+            <Risque niveau="faible" />
           </p>
         </div>
         <div className="tile">
           <p className="kicker">2 · Buts</p>
           <p className="tile-value">{p.buts.court ?? p.buts.selection}</p>
-          <ProbBar valeur={p.buts.probabilite} delai={300} />
           <p className="tile-foot">
-            <span className="tn accent"><Compteur valeur={p.buts.probabilite} delai={200} /></span>
-            <Cote valeur={p.buts.cote} mode="texte" />
+            <Risque niveau="faible" />
           </p>
         </div>
         <div className="tile">
@@ -60,12 +56,9 @@ export function FeaturedMatch({ fiche }: { fiche: Prediction }) {
           <p className="tile-value">{p.bonus ? p.bonus.court ?? p.bonus.selection : 'Pas de bonus'}</p>
           <p className="tile-foot">
             {p.bonus ? (
-              <>
-                <Risque niveau="moyen" />
-                <Cote valeur={p.bonus.cote} mode="texte" />
-              </>
+              <Risque niveau="moyen" />
             ) : (
-              <span className="muted">Aucun signal assez net</span>
+              <span className="muted">Aucun signal</span>
             )}
           </p>
         </div>
@@ -73,7 +66,7 @@ export function FeaturedMatch({ fiche }: { fiche: Prediction }) {
           <p className="kicker">4 · Score</p>
           <p className="tile-value tn">{p.scores[0]?.score ?? '—'}</p>
           <p className="tile-foot">
-          <Risque niveau="eleve" />
+            <Risque niveau="eleve" />
           </p>
         </div>
       </div>

@@ -9,9 +9,9 @@ import { FiltrePiliers, MatchRow } from '../components/MatchRow'
 import type { Filtre } from '../components/MatchRow'
 import { PageHeader } from '../components/PageHeader'
 import { FeaturedSkeleton, ListSkeleton } from '../components/Skeletons'
-import { Disclaimer, EmptyState, ErrorState, SectionTitle } from '../components/ui'
+import { Chip, Disclaimer, EmptyState, ErrorState, SectionTitle } from '../components/ui'
 import { useDay } from '../lib/day'
-import { jourLongLabel, pct, quandLabel, todayISO } from '../lib/format'
+import { jourLongLabel, quandLabel, todayISO } from '../lib/format'
 import { filtrer, lesPlusSurs, parCompetition, vedette } from '../lib/matchs'
 import { Link, useRouter } from '../lib/router'
 import { useAsync } from '../lib/useAsync'
@@ -22,7 +22,7 @@ function PlusSurs({ fiches }: { fiches: Prediction[] }) {
   return (
     <section className="card side-card rise" style={{ '--i': 2 } as CSSProperties} aria-labelledby="surs">
       <h2 id="surs">Les plus sûrs du jour</h2>
-      <p className="muted small">Pronostics « buts » à la probabilité la plus élevée</p>
+      <p className="muted small">Pronostics « buts » les plus solides</p>
       <div className="surs-list">
         {liste.map(f => (
           <Link key={f.match_id} to={'/match/' + f.match_id} className="surs-row press">
@@ -32,27 +32,10 @@ function PlusSurs({ fiches }: { fiches: Prediction[] }) {
               </strong>
               <span className="muted small">{f.pronostics?.buts.selection}</span>
             </span>
-            <span className="tn accent surs-pct">{pct(f.pronostics?.buts.probabilite ?? 0)}</span>
+            <Chip ton="ac">{f.pronostics?.buts.court ?? f.pronostics?.buts.selection}</Chip>
           </Link>
         ))}
       </div>
-    </section>
-  )
-}
-
-function TableauDuJour({ fiches }: { fiches: Prediction[] }) {
-  const analyses = fiches.filter(f => f.pronostics)
-  const confiance = analyses.length === 0 ? 0 : analyses.reduce((sum, f) => sum + (f.pronostics!.issue.probabilite + f.pronostics!.buts.probabilite) / 2, 0) / analyses.length
-  const suivis = fiches.filter(f => f.resultat.statut === 'evalue').length
-  return (
-    <section className="card day-dashboard rise" aria-labelledby="dashboard-jour">
-      <SectionTitle id="dashboard-jour" aside={<span className="muted small">Aujourd'hui</span>}>Votre tableau de bord</SectionTitle>
-      <div className="dashboard-metrics">
-        <div><strong>{analyses.length}</strong><span>analyses publiées</span></div>
-        <div><strong>{Math.round(confiance * 100)} %</strong><span>confiance moyenne</span></div>
-        <div><strong>{suivis}</strong><span>matchs évalués</span></div>
-      </div>
-      <p className="muted small">Apex publie un signal uniquement quand les données sont suffisamment lisibles.</p>
     </section>
   )
 }
@@ -111,8 +94,6 @@ export default function HomePage() {
                   <FeaturedMatch fiche={vedetteFiche} />
                 </section>
               )}
-
-              <TableauDuJour fiches={fiches} />
 
               <section aria-labelledby="jour-titre">
                 <SectionTitle

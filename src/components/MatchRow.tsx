@@ -37,12 +37,12 @@ function Pronos({ fiche, filtre }: { fiche: Prediction; filtre: Filtre }) {
   }
   const issue = (
     <Chip ton="ac">
-      {p.issue.court ?? p.issue.selection} · {pct(p.issue.probabilite)}
+      {p.issue.court ?? p.issue.selection}
     </Chip>
   )
   const buts = (
     <Chip>
-      {p.buts.court ?? p.buts.selection} · {pct(p.buts.probabilite)}
+      {p.buts.court ?? p.buts.selection}
     </Chip>
   )
   const bonus = p.bonus ? <Chip ton="am">{p.bonus.court ?? p.bonus.selection}</Chip> : <Chip ton="muet">Pas de bonus</Chip>
@@ -76,7 +76,7 @@ function Pronos({ fiche, filtre }: { fiche: Prediction; filtre: Filtre }) {
       <>
         {p.scores.slice(0, 1).map(s => (
           <Chip key={s.score} ton="am">
-            {s.score} · {pct(s.probabilite, 1)}
+            {s.score}
           </Chip>
         ))}
       </>
