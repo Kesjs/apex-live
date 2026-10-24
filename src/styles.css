@@ -150,6 +150,8 @@ main:focus {
 
 main {
   min-width: 0;
+  /* The mobile header is fixed; keep the AI bar and page content below it. */
+  padding-top: 70px;
   padding-bottom: 96px;
 }
 
@@ -269,6 +271,7 @@ main {
     border-right: 1px solid var(--ln);
   }
   main {
+    padding-top: 0;
     padding-bottom: 0;
   }
   .nav-bottom {
