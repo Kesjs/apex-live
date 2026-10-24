@@ -38,8 +38,16 @@ export function evaluerFiche(interne: Interne | null, r: ResultatReel): Resultat
   if (!interne) return { statut: 'evalue', issue: null, buts: null, bonus: null, score: null, score_final: final }
   let bonus: boolean | null = null
   if (interne.bonus) {
-    const reel = r.bonus?.[interne.bonus.categorie]
-    bonus = typeof reel === 'number' ? reel > interne.bonus.ligne : null
+    const type = interne.bonus.type ?? 'plus'
+    let reel: number | undefined
+    if (interne.bonus.equipe === 'domicile') {
+      reel = r.bonus_domicile?.[interne.bonus.categorie] ?? r.bonus?.[interne.bonus.categorie]
+    } else if (interne.bonus.equipe === 'exterieur') {
+      reel = r.bonus_exterieur?.[interne.bonus.categorie] ?? r.bonus?.[interne.bonus.categorie]
+    } else {
+      reel = r.bonus?.[interne.bonus.categorie]
+    }
+    bonus = typeof reel === 'number' ? (type === 'moins' ? reel < interne.bonus.ligne : reel > interne.bonus.ligne) : null
   }
   return {
     statut: 'evalue',

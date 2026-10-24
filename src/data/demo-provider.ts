@@ -169,18 +169,51 @@ function buildFiche(jour: string, index: number, dom: string, ext: string, compe
   const autre = favoriDomicile ? ext : dom
 
   /* issue */
-  const doubleChance = r() < 0.65
-  const pIssue = doubleChance ? 0.68 + r() * 0.2 : 0.55 + r() * 0.17
-  const code = doubleChance ? (favoriDomicile ? '1X' : 'X2') : favoriDomicile ? '1' : '2'
-  const coteIssue = round2(1 / (pIssue - (r() * 0.1 - 0.02)))
+  const rIssue = r()
+  let code: string
+  let selectionIssue: string
+  let pIssue: number
+  let justifIssue: string
+
+  if (rIssue < 0.38) {
+    // 1 direct (38 %)
+    code = '1'
+    selectionIssue = '1 · ' + dom + ' gagne'
+    pIssue = 0.52 + r() * 0.16
+    justifIssue = dom + ' affiche une excellente dynamique à domicile et part favori.'
+  } else if (rIssue < 0.60) {
+    // 2 direct (22 %)
+    code = '2'
+    selectionIssue = '2 · ' + ext + ' gagne'
+    pIssue = 0.46 + r() * 0.15
+    justifIssue = ext + ' voyage très bien et prend l\'ascendant sur ses déplacements récents.'
+  } else if (rIssue < 0.82) {
+    // 1X double chance (22 %)
+    code = '1X'
+    selectionIssue = '1X · ' + dom + ' ou nul'
+    pIssue = 0.72 + r() * 0.16
+    justifIssue = dom + ' reste solide à domicile ; confrontation équilibrée avec sécurité sur le nul.'
+  } else if (rIssue < 0.94) {
+    // X2 double chance (12 %)
+    code = 'X2'
+    selectionIssue = 'X2 · ' + ext + ' ou nul'
+    pIssue = 0.68 + r() * 0.15
+    justifIssue = ext + ' a les arguments pour ramener au moins un point de ce déplacement.'
+  } else {
+    // 12 sans nul (6 %)
+    code = '12'
+    selectionIssue = '12 · ' + dom + ' ou ' + ext + ' gagne'
+    pIssue = 0.76 + r() * 0.12
+    justifIssue = 'Rencontre ouverte et rythmée sans concession ; probabilité de nul minime.'
+  }
+
+  const coteIssue = round2(1 / (pIssue - (r() * 0.08 - 0.01)))
   const issue = {
-    selection: doubleChance ? code + ' · ' + favori + ' ou nul' : code + ' · ' + favori,
+    selection: selectionIssue,
     court: code,
     probabilite: round2(pIssue),
     cote: coteIssue,
-    justification: favoriDomicile
-      ? 'Bonne série récente à domicile et confrontations directes plutôt favorables.'
-      : "Meilleure dynamique à l'extérieur sur les derniers matchs.",
+    justification: justifIssue,
   }
 
   /* buts */
@@ -195,19 +228,103 @@ function buildFiche(jour: string, index: number, dom: string, ext: string, compe
     frequence: Math.round(pButs * 10) + ' sur 10 matchs combinés',
   }
 
-  /* bonus (toujours garanti) */
+  /* bonus (Over, Under et options par équipe) */
   const categorie = CATEGORIES[Math.floor(r() * CATEGORIES.length)]
-  const cfg = BONUS_CONFIG[categorie]
-  const obs = round1(cfg.obs + (r() - 0.5) * 0.8)
-  const unite = cfg.unite
+  const rOption = r()
+  let selBonus = ''
+  let courtBonus = ''
+  let justifBonus = ''
+  let obsVal = 0
+  let moyVal = 0
+
+  if (categorie === 'corners') {
+    moyVal = 9.4
+    if (rOption < 0.25) {
+      // Moins de corners
+      const lineC = r() < 0.5 ? 9.5 : 10.5
+      obsVal = round1(lineC - 1.2 - r() * 0.8)
+      selBonus = 'Moins de ' + String(lineC).replace('.', ',') + ' corners'
+      courtBonus = 'Corners -' + lineC
+      justifBonus = 'Moyenne de ' + String(obsVal).replace('.', ',') + ' corners par match (jeu axial maîtrisé), sous la moyenne de la ligue (' + moyVal + ').'
+    } else if (rOption < 0.50) {
+      // Plus de corners
+      const lineC = r() < 0.5 ? 8.5 : 9.5
+      obsVal = round1(lineC + 1.2 + r() * 1.1)
+      selBonus = 'Plus de ' + String(lineC).replace('.', ',') + ' corners'
+      courtBonus = 'Corners +' + lineC
+      justifBonus = 'Volume élevé de centres et de tirs sur les ailes avec ' + String(obsVal).replace('.', ',') + ' corners observés par match.'
+    } else if (rOption < 0.75) {
+      // Team corners domicile
+      obsVal = round1(5.2 + r() * 1.4)
+      selBonus = dom + ' : Plus de 4,5 corners'
+      courtBonus = dom.slice(0, 10) + ' Cnr +4.5'
+      justifBonus = dom + ' exerce une pression constante à domicile avec ' + String(obsVal).replace('.', ',') + ' corners obtenus en moyenne.'
+    } else {
+      // Team corners sous le seuil
+      obsVal = round1(3.4 + r() * 0.8)
+      selBonus = ext + ' : Moins de 4,5 corners'
+      courtBonus = ext.slice(0, 10) + ' Cnr -4.5'
+      justifBonus = ext + ' peine à développer un jeu d\'ailes prolifique en déplacement (' + String(obsVal).replace('.', ',') + ' corners/m).'
+    }
+  } else if (categorie === 'cartons') {
+    moyVal = 4.1
+    if (rOption < 0.30) {
+      // Moins de cartons match
+      const lineK = r() < 0.6 ? 4.5 : 3.5
+      obsVal = round1(lineK - 1.1 - r() * 0.6)
+      selBonus = 'Moins de ' + String(lineK).replace('.', ',') + ' cartons'
+      courtBonus = 'Cartons -' + lineK
+      justifBonus = 'Deux équipes très disciplinées (moyenne de ' + String(obsVal).replace('.', ',') + ' cartons), sous la moyenne ligue (' + moyVal + ').'
+    } else if (rOption < 0.60) {
+      // Plus de cartons match
+      const lineK = r() < 0.5 ? 3.5 : 4.5
+      obsVal = round1(lineK + 1.2 + r() * 0.8)
+      selBonus = 'Plus de ' + String(lineK).replace('.', ',') + ' cartons'
+      courtBonus = 'Cartons +' + lineK
+      justifBonus = 'Confrontation physique et intense ; ' + String(obsVal).replace('.', ',') + ' cartons distribués en moyenne.'
+    } else {
+      // Team cartons discipline
+      obsVal = round1(1.4 + r() * 0.5)
+      selBonus = dom + ' : Moins de 2,5 cartons'
+      courtBonus = dom.slice(0, 10) + ' Crt -2.5'
+      justifBonus = dom + ' concède très peu d\'avertissements devant son public (' + String(obsVal).replace('.', ',') + ' cartons en moyenne).'
+    }
+  } else if (categorie === 'fautes') {
+    moyVal = 24.2
+    if (rOption < 0.5) {
+      obsVal = round1(21.4 - r() * 1.5)
+      selBonus = 'Moins de 24,5 fautes'
+      courtBonus = 'Fautes -24.5'
+      justifBonus = 'Rythme de jeu fluide avec peu d\'arrêts (moyenne de ' + String(obsVal).replace('.', ',') + ' fautes/match).'
+    } else {
+      obsVal = round1(26.8 + r() * 1.6)
+      selBonus = 'Plus de 23,5 fautes'
+      courtBonus = 'Fautes +23.5'
+      justifBonus = 'Gros combat au milieu de terrain avec ' + String(obsVal).replace('.', ',') + ' fautes de moyenne observée.'
+    }
+  } else {
+    moyVal = 3.6
+    if (rOption < 0.5) {
+      obsVal = round1(2.6 - r() * 0.7)
+      selBonus = 'Moins de 3,5 hors-jeu'
+      courtBonus = 'Hors-jeu -3.5'
+      justifBonus = 'Lignes défensives plutôt basses, réduisant les pièges du hors-jeu (' + String(obsVal).replace('.', ',') + '/match).'
+    } else {
+      obsVal = round1(4.6 + r() * 0.8)
+      selBonus = 'Plus de 3,5 hors-jeu'
+      courtBonus = 'Hors-jeu +3.5'
+      justifBonus = 'Blocs médians hauts provoquant de nombreux hors-jeu (' + String(obsVal).replace('.', ',') + '/match).'
+    }
+  }
+
   const bonus: PronosticBonus = {
     categorie,
-    selection: 'Plus de ' + cfg.ligne + ' ' + cfg.unite,
-    court: categorieLabel[categorie] + ' +' + cfg.ligne,
+    selection: selBonus,
+    court: courtBonus,
     cote: round2(1.55 + r() * 0.4),
-    justification: 'Moyenne combinée de ' + String(obs).replace('.', ',') + ' ' + cfg.unite + ' par match, contre ' + String(cfg.moy).replace('.', ',') + ' pour la ligue.',
-    valeur_observee: obs,
-    moyenne_ligue: cfg.moy,
+    justification: justifBonus,
+    valeur_observee: obsVal,
+    moyenne_ligue: moyVal,
   }
 
   /* scores */
@@ -236,7 +353,7 @@ function buildFiche(jour: string, index: number, dom: string, ext: string, compe
     ? 'Les deux équipes marquent régulièrement, ce qui soutient le seuil de 1,5 but.'
     : "Le rythme offensif des deux équipes annonce un match ouvert (seuil de 2,5 buts)."
   const partie3 = bonus
-    ? 'Côté bonus, le signal le plus net concerne les ' + unite + '.'
+    ? 'Côté bonus, le signal le plus net concerne les ' + bonus.categorie + ' (' + bonus.court + ').'
     : "Aucun signal assez net pour proposer un bonus aujourd'hui."
   const synthese = partie1 + ' ' + partie2 + ' ' + partie3
 

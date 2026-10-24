@@ -55,6 +55,8 @@ export interface ResultatReel {
   score_domicile?: number
   score_exterieur?: number
   bonus?: Partial<Record<CategorieBonus, number>>
+  bonus_domicile?: Partial<Record<CategorieBonus, number>>
+  bonus_exterieur?: Partial<Record<CategorieBonus, number>>
 }
 
 /** Une source de données (démo, fichiers JSON, ou une API réelle à écrire). */
@@ -73,6 +75,11 @@ export interface Source {
 export interface Interne {
   issue: string
   buts: string
-  bonus: { categorie: CategorieBonus; ligne: number } | null
+  bonus: {
+    categorie: CategorieBonus
+    ligne: number
+    type?: 'plus' | 'moins'
+    equipe?: 'domicile' | 'exterieur'
+  } | null
   scores: string[]
 }

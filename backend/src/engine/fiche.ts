@@ -69,7 +69,7 @@ export function construireFiche(r: Rencontre, ctx: Contexte, source: { nom: stri
 
   const i = choisirIssue(issue(m), r.domicile.nom, r.exterieur.nom, fd, fe, r.cotes)
   const b = choisirButs(m, r.domicile.matchs, r.exterieur.matchs, r.cotes)
-  const bo = choisirBonus(r.domicile.matchs, r.exterieur.matchs, ctx, r.cotes)
+  const bo = choisirBonus(r.domicile.matchs, r.exterieur.matchs, ctx, r.cotes, r.domicile.nom, r.exterieur.nom)
   const scores = choisirScores(m, r.cotes) // un seul : le score exact le plus probable
 
   const val = valeur(
@@ -96,7 +96,7 @@ export function construireFiche(r: Rencontre, ctx: Contexte, source: { nom: stri
     interne: {
       issue: i.cle,
       buts: b.cle,
-      bonus: bo ? { categorie: bo.categorie, ligne: bo.ligne } : null,
+      bonus: bo ? { categorie: bo.categorie, ligne: bo.ligne, type: bo.type, equipe: bo.equipe } : null,
       scores: scores.map(s => s.score),
     },
   }

@@ -5,7 +5,6 @@ import { lesDeuxMarquent, meilleursScores, plusDe } from './poisson.ts'
 import type { Matrice } from './poisson.ts'
 
 const r2 = (n: number): number => Math.round(n * 100) / 100
-const SEUIL_VICTOIRE = 0.62
 const COTE_MIN = 1.15
 
 export function choisirIssue(
@@ -17,27 +16,57 @@ export function choisirIssue(
   cotes: Cotes,
 ): { pronostic: PronosticIssue; cle: string } {
   const domFavori = p.p1 >= p.p2
-  const nom = domFavori ? nomD : nomE
-  const autre = domFavori ? nomE : nomD
   const vFav = victoires(domFavori ? formeD : formeE)
   const vAutre = victoires(domFavori ? formeE : formeD)
+  const nom = domFavori ? nomD : nomE
+  const autre = domFavori ? nomE : nomD
+
   let cle: string
   let selection: string
   let probabilite: number
-  if (Math.max(p.p1, p.p2) >= SEUIL_VICTOIRE) {
-    cle = domFavori ? '1' : '2'
-    probabilite = domFavori ? p.p1 : p.p2
-    selection = cle + ' · ' + nom + ' gagne'
-  } else {
-    cle = domFavori ? '1X' : 'X2'
-    probabilite = domFavori ? p.p1 + p.pN : p.pN + p.p2
-    selection = cle + ' · ' + nom + ' ou nul'
+  let justification: string
+
+  // 1. Victoire nette Domicile (1)
+  if (p.p1 >= 0.46 && (p.p1 - p.p2 >= 0.08 || p.p1 >= 0.52)) {
+    cle = '1'
+    probabilite = p.p1
+    selection = '1 · ' + nomD + ' gagne'
+    justification = nomD + ' : ' + victoires(formeD) + ' victoire(s) récentes ; avantage notable à domicile.'
   }
+  // 2. Victoire nette Extérieur (2)
+  else if (p.p2 >= 0.42 && (p.p2 - p.p1 >= 0.06 || p.p2 >= 0.48)) {
+    cle = '2'
+    probabilite = p.p2
+    selection = '2 · ' + nomE + ' gagne'
+    justification = nomE + ' : ' + victoires(formeE) + ' victoire(s) récentes ; dynamique supérieure en déplacement.'
+  }
+  // 3. Match ouvert sans nul (12)
+  else if (p.pN <= 0.22 && p.p1 >= 0.35 && p.p2 >= 0.35) {
+    cle = '12'
+    probabilite = p.p1 + p.p2
+    selection = '12 · Victoire de l\'une des équipes'
+    justification = 'Rencontre ouverte entre deux attaques ; probabilité de match nul très faible (' + Math.round(p.pN * 100) + ' %).'
+  }
+  // 4. Double chance Domicile (1X)
+  else if (domFavori) {
+    cle = '1X'
+    probabilite = p.p1 + p.pN
+    selection = '1X · ' + nom + ' ou nul'
+    justification = nom + ' : ' + vFav + ' victoire(s) sur ses 5 derniers matchs ; ' + autre + ' : ' + vAutre + '.'
+  }
+  // 5. Double chance Extérieur (X2)
+  else {
+    cle = 'X2'
+    probabilite = p.pN + p.p2
+    selection = 'X2 · ' + nom + ' ou nul'
+    justification = nom + ' : ' + vFav + ' victoire(s) sur ses 5 derniers matchs ; ' + autre + ' : ' + vAutre + '.'
+  }
+
   const pronostic: PronosticIssue = {
     selection,
     court: cle,
     probabilite: r2(probabilite),
-    justification: nom + ' : ' + vFav + ' victoire(s) sur ses 5 derniers matchs ; ' + autre + ' : ' + vAutre + '.',
+    justification,
   }
   if (cotes[cle] !== undefined) pronostic.cote = cotes[cle]
   return { pronostic, cle }
