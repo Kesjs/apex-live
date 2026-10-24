@@ -28,8 +28,57 @@ export interface ChatComposerProps {
   match?: ChatMatchContext;
   cooldownSeconds?: number;
   maxRequests?: number;
-  onSendPrompt?: (prompt: string, tab: string) => Promise<ChatSectionData[] | void>;
+  onSendPrompt?: (prompt: string, tab: string, history: string[]) => Promise<ChatSectionData[] | void>;
   className?: string;
+}
+
+function normalizePrompt(value: string) {
+  return value
+    .toLocaleLowerCase("fr-FR")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim();
+}
+
+function getFallbackResponse(
+  prompt: string,
+  tab: string,
+  domicile: string,
+  exterieur: string,
+) {
+  const normalized = normalizePrompt(prompt);
+
+  if (/^(salut|bonjour|bonsoir|hello|coucou|hey)[ !,.?]*$/.test(normalized)) {
+    return {
+      conversational: true,
+      sections: [{ label: "Bonjour", sub: "Assistant Apex", time: "", body: "Salut ! Que veux-tu regarder sur ce match ?" }],
+    };
+  }
+
+  if (/^(merci|thanks|thx)[ !,.?]*$/.test(normalized)) {
+    return {
+      conversational: true,
+      sections: [{ label: "Avec plaisir", sub: "Assistant Apex", time: "", body: "Si tu veux, pose-moi une question précise sur le match." }],
+    };
+  }
+
+  if (/^(aide|help|que peux-tu faire|comment ca marche|comment fonctionne)/.test(normalized)) {
+    return {
+      conversational: true,
+      sections: [{ label: "Je peux t'aider", sub: "Assistant Apex", time: "", body: "Pose une question sur la forme, les statistiques, le match ou les pronostics." }],
+    };
+  }
+
+  const label = tab === "Stats" ? "Statistiques" : tab === "Pronos" ? "Pronostics" : "Question";
+  return {
+    conversational: false,
+    sections: [{
+      label,
+      sub: "Assistant Apex",
+      time: "",
+      body: `Je prends ta demande : « ${prompt} ». Je peux l'analyser pour ${domicile} - ${exterieur} à partir des données disponibles.`,
+    }],
+  };
 }
 
 function Section({
@@ -100,7 +149,8 @@ export default function ChatComposer({
   const [phase, setPhase] = useState<Phase>("idle");
   const [draft, setDraft] = useState("");
   const [submitted, setSubmitted] = useState("");
-  const [tab, setTab] = useState("Tactique");
+  const [history, setHistory] = useState<string[]>([]);
+  const [tab, setTab] = useState("Question");
   const [tabs] = useState(["Question", "Stats", "Pronos"]);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -137,39 +187,39 @@ export default function ChatComposer({
 
   const send = async () => {
     if (!canSend) return;
-    const ok = consumeCredit();
-    if (!ok) return;
-
     const promptText = draft.trim();
+    const fallback = getFallbackResponse(promptText, tab, dom, ext);
+
+    // Les salutations et demandes d'aide restent gratuites : elles ne déclenchent pas d'appel IA.
+    if (!fallback.conversational) {
+      const ok = consumeCredit();
+      if (!ok) return;
+    }
+
     setSubmitted(promptText);
     setDraft("");
+    const nextHistory = [...history, promptText].slice(-8);
+    setHistory(nextHistory);
+
+    if (fallback.conversational) {
+      setSections(fallback.sections);
+      setPhase("done");
+      return;
+    }
+
     setPhase("sent");
 
     if (onSendPrompt) {
       try {
-        const result = await onSendPrompt(promptText, tab);
+        const result = await onSendPrompt(promptText, tab, nextHistory);
         if (result && result.length) {
           setSections(result);
         }
       } catch {
-        // En cas d'erreur API, on garde la simulation de secours
+        setSections(fallback.sections);
       }
     } else {
-      // Réponses de synthèse selon le prompt
-      setSections([
-        {
-          label: tab === "Tactique" ? "Rapport Tactique" : tab === "Stats xG" ? "Métriques Clés" : "Prédiction Apex",
-          sub: "Synthèse Gemini 2.5 Flash",
-          time: "0.8s",
-          body: `Analyse de "${promptText}" : Sur les 5 dernières confrontations, l'indice d'intensité défensive est de 84/100 avec un tempo de jeu modéré.`,
-        },
-        {
-          label: "Indicateur Clé",
-          sub: "Apex Engine",
-          time: "1.8s",
-          body: `Facteur décisif : taux de conversion de 14.2% sur tirs cadrés. Le modèle préconise une prudence sur les totaux de buts élevés.`,
-        },
-      ]);
+      setSections(fallback.sections);
     }
   };
 

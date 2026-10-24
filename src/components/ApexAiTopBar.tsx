@@ -3,6 +3,7 @@ import ChatComposer from './ui/chat'
 import { useAiCredits } from '../lib/ai-credits'
 import { useRouter } from '../lib/router'
 import { Icon } from './Icon'
+import type { ChatSectionData } from './ui/chat'
 
 export function ApexAiTopBar() {
   const [ouvert, setOuvert] = useState(false)
@@ -185,6 +186,21 @@ export function ApexAiTopBar() {
                   : undefined
               }
               className="apex-chat-dark"
+              onSendPrompt={async (prompt, tab, history) => {
+                const response = await fetch('/api/chat', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    prompt,
+                    tab,
+                    history,
+                    match: { domicile: titreMatch?.split(' Vs ')[0], exterieur: titreMatch?.split(' Vs ')[1] },
+                  }),
+                })
+                if (!response.ok) throw new Error('Assistant indisponible')
+                const data = (await response.json()) as { sections?: ChatSectionData[] }
+                return data.sections || []
+              }}
             />
           </div>
         )}
