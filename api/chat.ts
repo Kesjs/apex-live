@@ -5,6 +5,8 @@ type Response = {
   end: () => void
 }
 
+declare const process: { env: Record<string, string | undefined> }
+
 const MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite'
 
 export default async function handler(req: Request, res: Response) {
