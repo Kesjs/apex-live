@@ -6,7 +6,7 @@ name: Apex — lot quotidien
 on:
   schedule:
     - cron: '0 3 * * *'   # 04:00 à Cotonou : évalue la veille puis calcule aujourd'hui, demain et après-demain
-    - cron: '17 * * * *' # Actualisation horaire des scores confirmés, sans recalcul des pronostics
+    - cron: '*/30 * * * *' # Actualisation toutes les 30 minutes des scores confirmés, sans recalcul des pronostics
   workflow_dispatch:
     inputs:
       commande:
@@ -47,5 +47,5 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && (inputs.commande == 'demarrage' || inputs.commande == 'batch') || github.event.schedule == '0 3 * * *'
         run: npm run batch
       - name: Évaluation seule
-        if: github.event_name == 'workflow_dispatch' && inputs.commande == 'evaluer' || github.event.schedule == '17 * * * *'
+        if: github.event_name == 'workflow_dispatch' && inputs.commande == 'evaluer' || github.event.schedule == '*/30 * * * *'
         run: npm run evaluer
