@@ -152,7 +152,8 @@ main {
   min-width: 0;
   /* The mobile header is fixed; keep the AI bar and page content below it. */
   padding-top: 70px;
-  padding-bottom: 96px;
+  /* Reserve the exact visual footprint of the fixed mobile tab bar. */
+  padding-bottom: calc(78px + env(safe-area-inset-bottom));
 }
 
 .mobile-header {
@@ -427,16 +428,21 @@ main {
 
 .nav-bottom {
   position: fixed;
-  left: 0;
-  right: 0;
+  inset-inline: 0;
   bottom: 0;
   z-index: 20;
   display: flex;
   justify-content: space-around;
-  padding: 8px 8px calc(10px + env(safe-area-inset-bottom));
+  width: 100%;
+  min-height: 78px;
+  padding: 6px 10px max(8px, env(safe-area-inset-bottom));
   background: rgba(15, 24, 21, 0.96);
   border-top: 1px solid var(--ln);
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  /* Keep the bar attached to the viewport on iOS and above page content. */
+  transform: translateZ(0);
+  isolation: isolate;
 }
 .nav-bottom .nav-link {
   flex: 1;
@@ -475,6 +481,10 @@ main {
 }
 
 @media (min-width: 900px) {
+  main {
+    padding-bottom: 0;
+  }
+
   .nav-bottom {
     display: none;
   }
@@ -1096,7 +1106,7 @@ main {
   }
 }
 
-@media (max-width: 519px) {
+@media (max-width: 899px) {
   .nav-bottom .nav-link:nth-child(3),
   .nav-bottom .nav-link:nth-child(5) {
     display: none;
