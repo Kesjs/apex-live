@@ -22,10 +22,11 @@ export function choisirBonus(
   ext: MatchPasse[],
   ctx: Contexte,
   cotes: Cotes,
-): { pronostic: PronosticBonus; categorie: CategorieBonus; ligne: number } | null {
+): { pronostic: PronosticBonus; categorie: CategorieBonus; ligne: number } {
   const echantillon = [...recents(dom, NB_MATCHS), ...recents(ext, NB_MATCHS)]
   let meilleur: { cat: CategorieBonus; ecart: number; obs: number; ligue: number; ligne: number; taux: number; score: number } | null = null
 
+  // 1. Recherche du signal le plus net selon les critères d'écart et de régularité
   for (const cat of CATEGORIES) {
     const ligue = ctx.moy_bonus[cat]
     if (!ligue || ligue <= 0) continue
@@ -43,7 +44,44 @@ export function choisirBonus(
     const score = ecart * taux * (valeurs.length / (valeurs.length + 4))
     if (!meilleur || score > meilleur.score) meilleur = { cat, ecart, obs, ligue, ligne, taux, score }
   }
-  if (!meilleur) return null
+
+  // 2. Repli garanti : si aucun signal n'a dépassé les seuils stricts, on assure systématiquement un bonus
+  if (!meilleur) {
+    let catFallback: CategorieBonus = 'corners'
+    let obsFallback = 0
+    let ligueFallback = 0
+    let ligneFallback = 8.5
+
+    const valCorners = echantillon.map(m => m.bonus?.corners).filter((v): v is number => typeof v === 'number')
+    const valCartons = echantillon.map(m => m.bonus?.cartons).filter((v): v is number => typeof v === 'number')
+
+    if (valCorners.length >= 2) {
+      catFallback = 'corners'
+      obsFallback = valCorners.reduce((a, b) => a + b, 0) / valCorners.length
+      ligueFallback = ctx.moy_bonus.corners || 9.5
+      ligneFallback = Math.max(6.5, Math.floor(obsFallback) - 1.5)
+    } else if (valCartons.length >= 2) {
+      catFallback = 'cartons'
+      obsFallback = valCartons.reduce((a, b) => a + b, 0) / valCartons.length
+      ligueFallback = ctx.moy_bonus.cartons || 4.1
+      ligneFallback = Math.max(2.5, Math.floor(obsFallback) - 1.0)
+    } else {
+      catFallback = (ctx.moy_bonus.corners && ctx.moy_bonus.corners > 0) ? 'corners' : 'corners'
+      ligueFallback = ctx.moy_bonus.corners || 9.5
+      obsFallback = ligueFallback
+      ligneFallback = 8.5
+    }
+
+    meilleur = {
+      cat: catFallback,
+      ecart: (obsFallback - ligueFallback) / (ligueFallback || 1),
+      obs: obsFallback,
+      ligue: ligueFallback,
+      ligne: ligneFallback,
+      taux: 0.65,
+      score: 0.5,
+    }
+  }
 
   const { cat, obs, ligue, ligne } = meilleur
   const pronostic: PronosticBonus = {

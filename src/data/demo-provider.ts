@@ -195,23 +195,19 @@ function buildFiche(jour: string, index: number, dom: string, ext: string, compe
     frequence: Math.round(pButs * 10) + ' sur 10 matchs combinés',
   }
 
-  /* bonus */
-  let bonus: PronosticBonus | null = null
-  let unite = ''
-  if (r() < 0.72) {
-    const categorie = CATEGORIES[Math.floor(r() * CATEGORIES.length)]
-    const cfg = BONUS_CONFIG[categorie]
-    const obs = round1(cfg.obs + (r() - 0.5) * 0.8)
-    unite = cfg.unite
-    bonus = {
-      categorie,
-      selection: 'Plus de ' + cfg.ligne + ' ' + cfg.unite,
-      court: categorieLabel[categorie] + ' +' + cfg.ligne,
-      cote: round2(1.55 + r() * 0.4),
-      justification: 'Moyenne combinée de ' + String(obs).replace('.', ',') + ' ' + cfg.unite + ' par match, contre ' + String(cfg.moy).replace('.', ',') + ' pour la ligue.',
-      valeur_observee: obs,
-      moyenne_ligue: cfg.moy,
-    }
+  /* bonus (toujours garanti) */
+  const categorie = CATEGORIES[Math.floor(r() * CATEGORIES.length)]
+  const cfg = BONUS_CONFIG[categorie]
+  const obs = round1(cfg.obs + (r() - 0.5) * 0.8)
+  const unite = cfg.unite
+  const bonus: PronosticBonus = {
+    categorie,
+    selection: 'Plus de ' + cfg.ligne + ' ' + cfg.unite,
+    court: categorieLabel[categorie] + ' +' + cfg.ligne,
+    cote: round2(1.55 + r() * 0.4),
+    justification: 'Moyenne combinée de ' + String(obs).replace('.', ',') + ' ' + cfg.unite + ' par match, contre ' + String(cfg.moy).replace('.', ',') + ' pour la ligue.',
+    valeur_observee: obs,
+    moyenne_ligue: cfg.moy,
   }
 
   /* scores */

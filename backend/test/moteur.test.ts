@@ -49,19 +49,23 @@ test('Forme : du plus ancien au plus récent', () => {
   assert.deepEqual(forme(m), ['V', 'N', 'D'])
 })
 
-test('Bonus : aucun signal → null ; signal net → cartons', () => {
+test('Bonus : signal neutre → repli garanti ; signal net → cartons', () => {
   const neutre = matchs(10, 1, 1, { cartons: 4, corners: 10, fautes: 24, 'hors-jeu': 4 })
-  assert.equal(choisirBonus(neutre, neutre, ctx, {}), null)
+  const fallback = choisirBonus(neutre, neutre, ctx, {})
+  assert.ok(fallback !== null)
+  assert.ok(fallback.ligne > 0)
   const chaud = matchs(10, 1, 1, { cartons: 5.5, corners: 10, fautes: 24, 'hors-jeu': 4 })
   const b = choisirBonus(chaud, chaud, ctx, { 'bonus:cartons:O3.5': 1.7 })
-  assert.equal(b?.categorie, 'cartons')
-  assert.equal(b?.ligne, 3.5)
-  assert.equal(b?.pronostic.cote, 1.7)
+  assert.equal(b.categorie, 'cartons')
+  assert.equal(b.ligne, 3.5)
+  assert.equal(b.pronostic.cote, 1.7)
 })
 
-test('Bonus : pas assez de données → null', () => {
+test('Bonus : peu de données → repli garanti basé sur la compétition', () => {
   const peu = matchs(2, 1, 1, { cartons: 9, corners: 10, fautes: 24, 'hors-jeu': 4 })
-  assert.equal(choisirBonus(peu, peu, ctx, {}), null)
+  const b = choisirBonus(peu, peu, ctx, {})
+  assert.ok(b !== null)
+  assert.ok(b.ligne > 0)
 })
 
 test('Bonus : la catégorie publiée varie selon le signal le plus solide', () => {
