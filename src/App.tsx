@@ -16,6 +16,7 @@ import { AuthProvider, useAuth } from './lib/auth'
 import { DayProvider } from './lib/day'
 import { PrefsProvider } from './lib/prefs'
 import { Link, RouterProvider, useRouter } from './lib/router'
+import { ApexAiTopBar } from './components/ApexAiTopBar'
 
 type Entree = { to: string; label: string; icone: IconName; actif: (path: string) => boolean }
 
@@ -122,6 +123,7 @@ function Shell() {
         </form>
       </header>
       <main id="main" ref={principal} tabIndex={-1}>
+        <ApexAiTopBar />
         <div className="page" key={path}>
           <Routes />
         </div>
