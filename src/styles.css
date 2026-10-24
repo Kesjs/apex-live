@@ -245,6 +245,33 @@ main {
   animation: page-in 0.4s var(--ease) both;
 }
 
+.community-page { max-width: 760px; }
+.community-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:20px; }
+.community-heading h1 { margin:2px 0 4px; font-size:clamp(28px,5vw,40px); }
+.community-tabs { display:flex; gap:8px; overflow:auto; padding:2px; }
+.community-tabs button { display:inline-flex; align-items:center; gap:7px; border:0; border-radius:999px; padding:10px 16px; background:var(--s2); color:var(--mu); font:inherit; font-size:13px; white-space:nowrap; cursor:pointer; }
+.community-tabs button.is-active { background:var(--ac); color:#fff; font-weight:700; }
+.community-composer { display:flex; align-items:center; gap:12px; padding:14px; }
+.community-composer-input { display:flex; align-items:center; justify-content:space-between; flex:1; border:0; border-radius:12px; padding:14px; background:var(--s2); color:var(--mu); font:inherit; font-size:13px; text-align:left; cursor:pointer; }
+.community-avatar { display:grid; width:38px; height:38px; flex:0 0 38px; place-items:center; border-radius:50%; background:linear-gradient(135deg,#dff6e9,#a9ddc1); color:#087b50; font-size:12px; font-weight:800; }
+.community-post { padding:18px; }
+.community-post-head { display:flex; align-items:center; gap:10px; }
+.community-post-head > div { display:flex; flex-direction:column; gap:2px; min-width:0; }
+.community-kind { margin-left:auto; border-radius:999px; padding:5px 9px; background:#e8fff3; color:#087b50; font-size:11px; white-space:nowrap; }
+.community-more { width:30px; height:30px; }
+.community-post h2 { margin:16px 0 8px; font-size:19px; }
+.community-post p { margin:0; color:var(--mu); line-height:1.55; }
+.community-post-image { display:block; width:100%; max-height:210px; object-fit:cover; margin-top:14px; border-radius:12px; }
+.community-post-actions { display:flex; align-items:center; gap:18px; padding-top:14px; margin-top:14px; border-top:1px solid var(--ln); }
+.community-post-actions button,.community-replies span { display:inline-flex; align-items:center; gap:6px; border:0; background:none; color:var(--mu); font:inherit; font-size:12px; cursor:pointer; }
+.community-post-actions button.is-liked { color:var(--ac); }
+.community-save { margin-left:auto; }
+.community-feed,.community-discussion { display:flex; flex-direction:column; gap:14px; }
+.community-discussion { flex-direction:row; padding:16px; }
+.community-discussion p { margin:6px 0 10px; color:var(--mu); line-height:1.5; }
+.community-replies { display:flex; gap:12px; color:var(--mu); font-size:12px; }
+@media(max-width:600px){.community-page{padding-left:16px;padding-right:16px}.community-kind{font-size:10px;padding:4px 7px}.community-post{padding:15px}.community-post h2{font-size:17px}.community-post-actions{gap:12px}.community-save{font-size:0!important}.community-save svg{margin:0}.community-tabs button{padding:9px 13px}}
+
 .home-grid,
 .detail-grid,
 .history-grid,

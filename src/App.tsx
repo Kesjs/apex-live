@@ -9,7 +9,6 @@ import HomePage from './pages/HomePage'
 import MatchesPage from './pages/MatchesPage'
 import MatchPage from './pages/MatchPage'
 import SettingsPage from './pages/SettingsPage'
-import NewsPage from './pages/NewsPage'
 import AuthPage from './pages/AuthPage'
 import WelcomePage from './pages/WelcomePage'
 import { AuthProvider, useAuth } from './lib/auth'
@@ -17,6 +16,7 @@ import { DayProvider } from './lib/day'
 import { PrefsProvider } from './lib/prefs'
 import { Link, RouterProvider, useRouter } from './lib/router'
 import { ApexAiTopBar } from './components/ApexAiTopBar'
+import CommunityPage from './pages/CommunityPage'
 
 type Entree = { to: string; label: string; icone: IconName; actif: (path: string) => boolean }
 
@@ -24,7 +24,7 @@ const ENTREES: Entree[] = [
   { to: '/', label: 'Accueil', icone: 'home', actif: p => p === '/' },
   { to: '/matchs', label: 'Matchs', icone: 'ball', actif: p => p === '/matchs' || p.startsWith('/match/') },
   { to: '/historique', label: 'Historique', icone: 'chart', actif: p => p === '/historique' },
-  { to: '/actualites', label: 'Actualités', icone: 'card', actif: p => p === '/actualites' },
+  { to: '/communaute', label: 'Communauté', icone: 'card', actif: p => p === '/communaute' },
   { to: '/reglages', label: 'Réglages', icone: 'sliders', actif: p => p === '/reglages' },
 ]
 
@@ -33,7 +33,7 @@ const TITRES: Record<string, string> = {
   '/matchs': 'Matchs',
   '/historique': 'Historique',
   '/reglages': 'Réglages',
-  '/actualites': 'Actualités',
+  '/communaute': 'Communauté',
 }
 
 function Navigation({ variante }: { variante: 'sidebar' | 'bottom' }) {
@@ -59,7 +59,7 @@ function Routes(): ReactNode {
   if (path === '/matchs') return <MatchesPage />
   if (path === '/historique') return <HistoryPage />
   if (path === '/reglages') return <SettingsPage />
-  if (path === '/actualites') return <NewsPage />
+  if (path === '/communaute') return <CommunityPage />
   const detail = /^\/match\/([^/]+)\/?$/.exec(path)
   if (detail) return <MatchPage matchId={decodeURIComponent(detail[1])} />
   return (
