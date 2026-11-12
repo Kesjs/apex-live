@@ -16,31 +16,38 @@ import { DayProvider } from './lib/day'
 import { PrefsProvider } from './lib/prefs'
 import { Link, RouterProvider, useRouter } from './lib/router'
 import { ApexAiTopBar } from './components/ApexAiTopBar'
-import CommunityPage from './pages/CommunityPage'
+import NewsPage from './pages/NewsPage'
+import FavoritesPage from './pages/FavoritesPage'
 
 type Entree = { to: string; label: string; icone: IconName; actif: (path: string) => boolean }
 
-const ENTREES: Entree[] = [
+const ENTREES_BOTTOM: Entree[] = [
   { to: '/', label: 'Accueil', icone: 'home', actif: p => p === '/' },
   { to: '/matchs', label: 'Matchs', icone: 'ball', actif: p => p === '/matchs' || p.startsWith('/match/') },
+  { to: '/actualites', label: 'Actualités', icone: 'card', actif: p => p === '/actualites' },
   { to: '/historique', label: 'Historique', icone: 'chart', actif: p => p === '/historique' },
-  { to: '/communaute', label: 'Communauté', icone: 'card', actif: p => p === '/communaute' },
+]
+
+const ENTREES_SIDEBAR: Entree[] = [
+  ...ENTREES_BOTTOM,
   { to: '/reglages', label: 'Réglages', icone: 'sliders', actif: p => p === '/reglages' },
 ]
 
 const TITRES: Record<string, string> = {
   '/': 'Accueil',
   '/matchs': 'Matchs',
+  '/actualites': 'Actualités',
   '/historique': 'Historique',
   '/reglages': 'Réglages',
-  '/communaute': 'Communauté',
+  '/favoris': 'Favoris',
 }
 
 function Navigation({ variante }: { variante: 'sidebar' | 'bottom' }) {
   const { path } = useRouter()
+  const entrees = variante === 'sidebar' ? ENTREES_SIDEBAR : ENTREES_BOTTOM
   return (
     <nav className={variante === 'sidebar' ? 'nav-side' : 'nav-bottom'} aria-label={variante === 'sidebar' ? 'Navigation principale' : 'Navigation mobile'}>
-      {ENTREES.map(e => {
+      {entrees.map(e => {
         const actif = e.actif(path)
         return (
           <Link key={e.to} to={e.to} className={'nav-link' + (actif ? ' is-active' : '')} aria-current={actif ? 'page' : undefined}>
@@ -57,9 +64,10 @@ function Routes(): ReactNode {
   const { path } = useRouter()
   if (path === '/') return <HomePage />
   if (path === '/matchs') return <MatchesPage />
+  if (path === '/actualites') return <NewsPage />
   if (path === '/historique') return <HistoryPage />
   if (path === '/reglages') return <SettingsPage />
-  if (path === '/communaute') return <CommunityPage />
+  if (path === '/favoris') return <FavoritesPage />
   const detail = /^\/match\/([^/]+)\/?$/.exec(path)
   if (detail) return <MatchPage matchId={decodeURIComponent(detail[1])} />
   return (

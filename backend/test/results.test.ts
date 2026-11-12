@@ -31,7 +31,7 @@ test('Un score final est publié sans attendre le bonus puis le bonus est compl�
 })
 
 test('Un match passé sans confirmation ne devient ni imminent ni terminé ; un 0-0 reste un score final',()=>{
- assert.equal(matchStatus(fiche,Date.parse('2026-10-24T04:00:00Z')).label,'Résultat indisponible')
+ assert.equal(matchStatus(fiche,Date.parse('2026-10-24T04:00:00Z')).label,'Résultat en attente')
  assert.equal(matchStatus(fiche,Date.parse('2026-10-23T17:00:00Z')).label,'À venir')
  assert.equal(matchStatus({...fiche,resultat:{...fiche.resultat,statut:'annule'}}).label,'Annulé ou reporté')
  assert.equal(matchStatus({...fiche,resultat:{...fiche.resultat,score_final:'0-0'}}).score,'0-0')

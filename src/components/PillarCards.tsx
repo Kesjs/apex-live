@@ -224,20 +224,20 @@ export function ComboCard({ fiche, delai = 0 }: { fiche: Prediction; delai?: num
       <header className="pillar-head">
         <span
           className="pillar-ico pillar-ico-ac"
-          style={{ background: 'rgba(46, 230, 160, 0.2)', color: 'var(--ac, #2ee6a0)' }}
+          style={{ background: 'rgba(10, 166, 106, 0.12)', color: 'var(--ac, #0aa66a)' }}
         >
           <Icon name="sparkle" size={20} />
         </span>
         <div style={{ flex: 1 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-            <p className="kicker" style={{ color: 'var(--ac, #2ee6a0)', fontWeight: 600 }}>
+            <p className="kicker" style={{ color: 'var(--ac, #0aa66a)', fontWeight: 600 }}>
               5 · Scénario Combiné · Combo Apex
             </p>
             <span
               style={{
                 fontSize: '11px',
-                background: 'rgba(46, 230, 160, 0.15)',
-                color: 'var(--ac, #2ee6a0)',
+                background: 'rgba(10, 166, 106, 0.1)',
+                color: 'var(--ac, #0aa66a)',
                 padding: '2px 8px',
                 borderRadius: '10px',
                 fontWeight: 600,
@@ -246,7 +246,7 @@ export function ComboCard({ fiche, delai = 0 }: { fiche: Prediction; delai?: num
               Recommandé
             </span>
           </div>
-          <h3 style={{ fontSize: '16px', marginTop: '2px', color: 'var(--tx, #e9f2ed)' }}>{combo.selection}</h3>
+          <h3 style={{ fontSize: '16px', marginTop: '2px', color: 'var(--tx, #131d18)' }}>{combo.selection}</h3>
         </div>
       </header>
 
@@ -261,23 +261,23 @@ export function ComboCard({ fiche, delai = 0 }: { fiche: Prediction; delai?: num
           marginTop: '12px',
           padding: '10px 14px',
           borderRadius: '10px',
-          background: 'rgba(15, 24, 21, 0.8)',
-          border: '1px solid rgba(46, 230, 160, 0.2)',
+          background: 'rgba(10, 166, 106, 0.05)',
+          border: '1px solid rgba(10, 166, 106, 0.2)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
           <span style={{ fontSize: '14px' }}>🧠</span>
-          <strong style={{ fontSize: '12px', color: 'var(--tx, #e9f2ed)' }}>Conclusion de l'IA</strong>
-          <span style={{ fontSize: '10px', color: 'var(--mu, #8ca196)', marginLeft: 'auto' }}>
+          <strong style={{ fontSize: '12px', color: 'var(--tx, #131d18)' }}>Conclusion de l'IA</strong>
+          <span style={{ fontSize: '10px', color: 'var(--mu, #5d7167)', marginLeft: 'auto' }}>
             Synthèse des 4 piliers
           </span>
         </div>
-        <p style={{ margin: 0, fontSize: '13px', lineHeight: '1.45', color: 'var(--tx, #e9f2ed)' }}>
+        <p style={{ margin: 0, fontSize: '13px', lineHeight: '1.45', color: 'var(--tx, #131d18)' }}>
           {combo.conclusionIa}
         </p>
       </div>
 
-      <p className="pillar-note" style={{ marginTop: '8px', fontSize: '11.5px', color: 'var(--mu, #8ca196)' }}>
+      <p className="pillar-note" style={{ marginTop: '8px', fontSize: '11.5px', color: 'var(--mu, #5d7167)' }}>
         {combo.justification}
       </p>
     </article>

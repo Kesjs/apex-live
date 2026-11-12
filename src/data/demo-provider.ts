@@ -17,7 +17,7 @@ import type {
   TauxPilier,
   Valeur,
 } from '../domain/contracts'
-import { addDays, categorieLabel, hash, parseISODate, todayISO } from '../lib/format'
+import { addDays, hash, parseISODate, todayISO } from '../lib/format'
 
 /**
  * Source de données de DÉMONSTRATION.
@@ -71,13 +71,6 @@ const FIXTURES: Array<[string, string, string]> = [
 ]
 
 const HEURES = ['16:00', '18:45', '19:00', '20:30', '21:00', '21:00']
-
-const BONUS_CONFIG: Record<CategorieBonus, { ligne: number; obs: number; moy: number; unite: string }> = {
-  cartons: { ligne: 3.5, obs: 4.6, moy: 3.9, unite: 'cartons' },
-  corners: { ligne: 8.5, obs: 10.2, moy: 9.1, unite: 'corners' },
-  fautes: { ligne: 24.5, obs: 26.8, moy: 23.4, unite: 'fautes' },
-  'hors-jeu': { ligne: 3.5, obs: 4.1, moy: 3.4, unite: 'hors-jeu' },
-}
 
 const CATEGORIES: CategorieBonus[] = ['cartons', 'corners', 'fautes', 'hors-jeu']
 
@@ -330,7 +323,6 @@ function buildFiche(jour: string, index: number, dom: string, ext: string, compe
   /* scores */
   const set = SCORE_SETS[Math.floor(r() * SCORE_SETS.length)]
   const p1 = 0.1 + r() * 0.06
-  const p2 = p1 - (0.01 + r() * 0.02)
   const scores = [
     { score: set[0], probabilite: Math.round(p1 * 1000) / 1000, cote: round2(0.9 / p1) },
   ]
@@ -462,7 +454,17 @@ export const demoProvider: ApexProvider = {
     if (modeDemo() === 'erreur') throw new Error('Source de démonstration en panne (paramètre ?demo=erreur).')
     return buildHistory(periode)
   },
-  async getNews() {
+  async getNews(categorie) {
+    try {
+      const query = categorie ? '?categorie=' + encodeURIComponent(categorie) : ''
+      const res = await fetch('/api/actualites' + query)
+      if (res.ok) {
+        const data = (await res.json()) as NewsArticle[]
+        if (Array.isArray(data) && data.length > 0) return data
+      }
+    } catch {
+      /* Mode hors ligne */
+    }
     return [] as NewsArticle[]
   },
 }

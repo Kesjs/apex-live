@@ -15,7 +15,12 @@ export default async function handler(req: Request, res: Response) {
   const key = process.env.GEMINI_API_KEY
   if (!key) return res.status(503).json({ error: 'Assistant non configuré' })
 
-  const body = (req.body || {}) as { prompt?: string; tab?: string; history?: string[]; match?: { domicile?: string; exterieur?: string } }
+  let body: { prompt?: string; tab?: string; history?: string[]; match?: { domicile?: string; exterieur?: string } } = {}
+  if (typeof req.body === 'string') {
+    try { body = JSON.parse(req.body) } catch { body = {} }
+  } else if (req.body && typeof req.body === 'object') {
+    body = req.body as typeof body
+  }
   const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : ''
   if (!prompt || prompt.length > 500) return res.status(400).json({ error: 'Question invalide' })
 

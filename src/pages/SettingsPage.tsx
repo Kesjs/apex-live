@@ -45,7 +45,14 @@ export default function SettingsPage() {
 
       <div className="settings-grid">
         <section aria-labelledby="favoris" className="stack-sm">
-          <SectionTitle id="favoris">Mes favoris</SectionTitle>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <SectionTitle id="favoris">Mes favoris</SectionTitle>
+            {favoris.length > 0 && (
+              <Link to="/favoris" className="text-link" style={{ fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                Page dédiée <Icon name="arrow" size={14} />
+              </Link>
+            )}
+          </div>
           {favoris.length === 0 ? (
             <div className="card state compact">
               <span className="state-icon">

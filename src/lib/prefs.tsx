@@ -12,7 +12,7 @@ function lire(): Prefs {
     const brut = window.localStorage.getItem(CLE)
     if (!brut) return DEFAUT
     const o = JSON.parse(brut) as Partial<Prefs>
-    return { cotes: false, animations: o.animations !== false }
+    return { cotes: Boolean(o.cotes), animations: o.animations !== false }
   } catch {
     return DEFAUT
   }

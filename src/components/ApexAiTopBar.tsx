@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import ChatComposer from './ui/chat'
 import { useAiCredits } from '../lib/ai-credits'
 import { useRouter } from '../lib/router'
+import { provider } from '../data'
 import { Icon } from './Icon'
 import type { ChatSectionData } from './ui/chat'
 
@@ -13,16 +14,32 @@ export function ApexAiTopBar() {
   // Détection du match en cours si sur une page /match/:id
   const matchMatch = /^\/match\/([^/]+)/.exec(path)
   const matchId = matchMatch ? decodeURIComponent(matchMatch[1]) : undefined
+  const [matchInfo, setMatchInfo] = useState<{ domicile: string; exterieur: string; competition?: string } | null>(null)
 
-  // Titre contextuel
-  const titreMatch = matchId
-    ? matchId.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-    : undefined
+  useEffect(() => {
+    if (!matchId) {
+      setMatchInfo(null)
+      return
+    }
+    let actif = true
+    provider.getMatch(matchId).then((fiche) => {
+      if (actif && fiche) {
+        setMatchInfo({
+          domicile: fiche.equipes.domicile,
+          exterieur: fiche.equipes.exterieur,
+          competition: fiche.competition,
+        })
+      }
+    }).catch(() => undefined)
+    return () => { actif = false }
+  }, [matchId])
+
+  const titreMatch = matchInfo ? `${matchInfo.domicile} – ${matchInfo.exterieur}` : undefined
 
   return (
     <aside
       className="apex-ai-bar"
-      aria-label="Assistant IA WhoScored"
+      aria-label="Assistant IA Apex"
       style={{
         margin: '0 auto 12px',
         width: '100%',
@@ -33,10 +50,10 @@ export function ApexAiTopBar() {
     >
       <div
         style={{
-          background: '#ffffff',
+          background: 'var(--s1, #ffffff)',
           border: '1px solid var(--ln)',
           borderRadius: '14px',
-          boxShadow: '0 2px 10px rgba(27, 44, 63, 0.05)',
+          boxShadow: '0 2px 10px rgba(19, 29, 24, 0.05)',
           overflow: 'hidden',
           transition: 'all 250ms cubic-bezier(0.2, 0.7, 0.2, 1)',
         }}
@@ -62,20 +79,20 @@ export function ApexAiTopBar() {
                 width: '24px',
                 height: '24px',
                 borderRadius: '6px',
-                background: 'rgba(46, 230, 160, 0.2)',
-                color: 'var(--ac, #2ee6a0)',
+                background: 'rgba(10, 166, 106, 0.12)',
+                color: 'var(--ac, #0aa66a)',
                 fontSize: '13px',
               }}
             >
               <Icon name="sparkle" size={14} />
             </span>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--tx, #e9f2ed)' }}>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--tx, #131d18)' }}>
               Apex IA
               <span
                 style={{
                   fontSize: '11px',
                   fontWeight: 400,
-                  color: 'var(--mu, #8ca196)',
+                  color: 'var(--mu, #5d7167)',
                   marginLeft: '4px',
                 }}
               >
@@ -86,11 +103,11 @@ export function ApexAiTopBar() {
               <span
                 style={{
                   fontSize: '11px',
-                  background: 'rgba(46, 230, 160, 0.1)',
-                  color: 'var(--ac, #2ee6a0)',
+                  background: 'rgba(10, 166, 106, 0.08)',
+                  color: 'var(--ac, #0aa66a)',
                   padding: '2px 8px',
                   borderRadius: '10px',
-                  border: '1px solid rgba(46, 230, 160, 0.2)',
+                  border: '1px solid rgba(10, 166, 106, 0.2)',
                 }}
               >
                 Match : {titreMatch}
@@ -109,8 +126,8 @@ export function ApexAiTopBar() {
                 alignItems: 'center',
                 gap: '5px',
                 fontSize: '11.5px',
-                color: isQuotaExceeded ? 'var(--ko, #ff9a9a)' : 'var(--ac, #2ee6a0)',
-                background: isQuotaExceeded ? 'rgba(255, 120, 120, 0.12)' : 'rgba(46, 230, 160, 0.12)',
+                color: isQuotaExceeded ? 'var(--ko, #dc2626)' : 'var(--ac, #0aa66a)',
+                background: isQuotaExceeded ? 'rgba(220, 38, 38, 0.08)' : 'rgba(10, 166, 106, 0.08)',
                 padding: '3px 9px',
                 borderRadius: '12px',
                 fontWeight: 500,
@@ -128,8 +145,8 @@ export function ApexAiTopBar() {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '5px',
-                background: ouvert ? 'rgba(255, 255, 255, 0.08)' : 'var(--ac, #2ee6a0)',
-                color: ouvert ? 'var(--tx, #e9f2ed)' : '#04120d',
+                background: ouvert ? 'var(--s2, #f0f4f2)' : 'var(--ac, #0aa66a)',
+                color: ouvert ? 'var(--tx, #131d18)' : '#ffffff',
                 border: 'none',
                 padding: '4px 10px',
                 borderRadius: '6px',
@@ -150,11 +167,11 @@ export function ApexAiTopBar() {
           <div
             style={{
               padding: '12px 14px 16px',
-              borderTop: '1px solid rgba(46, 230, 160, 0.15)',
+              borderTop: '1px solid var(--ln)',
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
-              background: '#ffffff',
+              background: 'var(--s1, #ffffff)',
               animation: 'fade-up 250ms ease both',
             }}
           >
@@ -166,25 +183,17 @@ export function ApexAiTopBar() {
                 maxWidth: '520px',
                 marginBottom: '8px',
                 fontSize: '11px',
-                color: 'var(--mu, #8ca196)',
+                color: 'var(--mu, #5d7167)',
               }}
             >
               <span>
-                Posez une question sur ce match.
+                {matchInfo ? `Posez une question sur ${matchInfo.domicile} – ${matchInfo.exterieur}.` : 'Posez une question à l’assistant football.'}
               </span>
               <span>{timeUntilReset}</span>
             </div>
 
             <ChatComposer
-              match={
-                matchId
-                  ? {
-                      domicile: titreMatch?.split(' Vs ')[0] || 'Domicile',
-                      exterieur: titreMatch?.split(' Vs ')[1] || 'Extérieur',
-                      competition: 'Apex Live',
-                    }
-                  : undefined
-              }
+              match={matchInfo ?? undefined}
               className="apex-chat-dark"
               onSendPrompt={async (prompt, tab, history) => {
                 const response = await fetch('/api/chat', {
@@ -194,7 +203,7 @@ export function ApexAiTopBar() {
                     prompt,
                     tab,
                     history,
-                    match: { domicile: titreMatch?.split(' Vs ')[0], exterieur: titreMatch?.split(' Vs ')[1] },
+                    match: matchInfo ? { domicile: matchInfo.domicile, exterieur: matchInfo.exterieur } : undefined,
                   }),
                 })
                 if (!response.ok) throw new Error('Assistant indisponible')

@@ -23,7 +23,7 @@ export function DateRail({ jour, onChange, nombre = 3, avant = 2 }: DateRailProp
   }, [jour])
   return (
     <div ref={rail} className="rail date-rail" role="group" aria-label="Choisir le jour">
-      {jours.map((j, i) => (
+      {jours.map(j => (
         <button
           type="button"
           key={j}

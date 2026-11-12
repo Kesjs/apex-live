@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import type { PilierId, Prediction } from '../domain/contracts'
-import { heureCourte, pct, pilierLabel } from '../lib/format'
+import { heureCourte, pilierLabel } from '../lib/format'
 import { Link } from '../lib/router'
 import { Crest } from './Crest'
 import { Icon } from './Icon'
