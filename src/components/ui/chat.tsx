@@ -21,7 +21,21 @@ export interface ChatMatchContext {
   domicile?: string;
   exterieur?: string;
   competition?: string;
-  scorePrevu?: string;
+  date_heure?: string;
+  score_actuel?: string;
+  statut?: string;
+  buts_attendus?: { domicile: number; exterieur: number };
+  stats?: {
+    domicile?: { matchs: number; buts_marques: number; buts_encaisses: number; plus_2_5: number; sans_encaisser: number; derniers: string[] };
+    exterieur?: { matchs: number; buts_marques: number; buts_encaisses: number; plus_2_5: number; sans_encaisser: number; derniers: string[] };
+  };
+  forme?: { domicile: string[]; exterieur: string[] };
+  pronostics?: {
+    issue?: { selection: string; probabilite: number; cote?: number; justification?: string };
+    buts?: { selection: string; probabilite: number; cote?: number; justification?: string };
+    bonus?: { categorie: string; selection: string; valeur_observee?: number; moyenne_ligue?: number; justification?: string };
+    scores?: Array<{ score: string; probabilite: number }>;
+  };
 }
 
 export interface ChatComposerProps {
@@ -43,40 +57,64 @@ function normalizePrompt(value: string) {
 function getFallbackResponse(
   prompt: string,
   tab: string,
-  domicile: string,
-  exterieur: string,
+  match?: ChatMatchContext,
 ) {
   const normalized = normalizePrompt(prompt);
 
   if (/^(salut|bonjour|bonsoir|hello|coucou|hey)[ !,.?]*$/.test(normalized)) {
     return {
       conversational: true,
-      sections: [{ label: "Bonjour", sub: "Assistant Apex", time: "", body: "Salut ! Que veux-tu regarder sur ce match ?" }],
+      sections: [{
+        label: "Bonjour !",
+        sub: "Apex Football IA",
+        time: "À l’instant",
+        body: match?.domicile
+          ? `Salut ! Que souhaites-tu analyser sur ${match.domicile} – ${match.exterieur} (forme, xG, pronostics, tactique) ?`
+          : "Salut ! Je suis l'analyste football d'Apex. Pose-moi une question sur un match, un club, les statistiques avancées (xG, Poisson) ou la tactique !",
+      }],
     };
   }
 
-  if (/^(merci|thanks|thx)[ !,.?]*$/.test(normalized)) {
+  if (/^(merci|thanks|thx|super|parfait)[ !,.?]*$/.test(normalized)) {
     return {
       conversational: true,
-      sections: [{ label: "Avec plaisir", sub: "Assistant Apex", time: "", body: "Si tu veux, pose-moi une question précise sur le match." }],
+      sections: [{
+        label: "Avec plaisir !",
+        sub: "Apex Football IA",
+        time: "À l’instant",
+        body: match?.domicile
+          ? `N'hésite pas si tu as d'autres questions sur ${match.domicile} vs ${match.exterieur} ou sur un autre match.`
+          : "N'hésite pas si tu souhaites explorer d'autres statistiques ou tactiques !",
+      }],
     };
   }
 
   if (/^(aide|help|que peux-tu faire|comment ca marche|comment fonctionne)/.test(normalized)) {
     return {
       conversational: true,
-      sections: [{ label: "Je peux t'aider", sub: "Assistant Apex", time: "", body: "Pose une question sur la forme, les statistiques, le match ou les pronostics." }],
+      sections: [{
+        label: "Guide de l'assistant",
+        sub: "Apex Football IA",
+        time: "Info",
+        body: match?.domicile
+          ? `Tu peux me poser des questions sur les xG attendus de ${match.domicile} et ${match.exterieur}, les tendances Over/Under 2.5 buts, les probabilités 1N2 du modèle Apex, ou la valeur des cotes.`
+          : "Tu peux me poser des questions sur les modèles statistiques (xG, Poisson), la tactique (pressing haut, bloc médian, transitions), les règles du jeu, ou me demander une analyse libre sur n'importe quel championnat.",
+      }],
     };
   }
 
-  const label = tab === "Stats" ? "Statistiques" : tab === "Pronos" ? "Pronostics" : "Question";
+  const label = tab === "Stats" ? "Statistiques" : tab === "Pronos" ? "Pronostics" : tab === "Tactique" ? "Tactique" : "Analyse Apex";
+  const body = match?.domicile
+    ? `Analyse pour ${match.domicile} - ${match.exterieur} : « ${prompt} ». Pour recevoir l'analyse complète de Gemini en direct, assurez-vous que GEMINI_API_KEY est configuré.`
+    : `Analyse football : « ${prompt} ». Pour recevoir l'analyse complète de Gemini en direct, assurez-vous que GEMINI_API_KEY est configuré.`;
+
   return {
     conversational: false,
     sections: [{
       label,
-      sub: "Assistant Apex",
-      time: "",
-      body: `Je prends ta demande : « ${prompt} ». Je peux l'analyser pour ${domicile} - ${exterieur} à partir des données disponibles.`,
+      sub: "Apex Football IA",
+      time: "À l’instant",
+      body,
     }],
   };
 }
@@ -132,8 +170,8 @@ export default function ChatComposer({
   onSendPrompt,
   className = "",
 }: ChatComposerProps) {
-  const dom = match?.domicile || "Real Madrid";
-  const ext = match?.exterieur || "Man City";
+  const dom = match?.domicile;
+  const ext = match?.exterieur;
 
   const {
     creditsLeft,
@@ -150,25 +188,44 @@ export default function ChatComposer({
   const [draft, setDraft] = useState("");
   const [submitted, setSubmitted] = useState("");
   const [history, setHistory] = useState<string[]>([]);
-  const [tab, setTab] = useState("Question");
-  const [tabs] = useState(["Question", "Stats", "Pronos"]);
+  
+  const tabs = match?.domicile ? ["Match", "Stats", "Pronos"] : ["Général", "Tactique", "Statistiques"];
+  const [tab, setTab] = useState(tabs[0]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Réponses dynamiques générées
-  const [sections, setSections] = useState<ChatSectionData[]>([
-    {
-      label: "Analyse Tactique",
-      sub: "Bloc & Pressing",
-      time: "1s",
-      body: `${dom} affiche 62% de possession moyenne à domicile mais concède 1.4 contre-attaque dangereuse par match face aux blocs bas.`,
-    },
-    {
-      label: "Vulnérabilité xG",
-      sub: "Modèle Apex · Gemini Flash",
-      time: "2s",
-      body: `${ext} surperforme ses xGA de +18% sur phases arrêtées. Avantage léger aux transitions rapides.`,
-    },
-  ]);
+  const initialSections = (): ChatSectionData[] => {
+    if (dom && ext) {
+      const xgD = match?.buts_attendus?.domicile !== undefined ? match.buts_attendus.domicile.toFixed(1) : undefined;
+      const xgE = match?.buts_attendus?.exterieur !== undefined ? match.buts_attendus.exterieur.toFixed(1) : undefined;
+      return [
+        {
+          label: `Contexte · ${dom} vs ${ext}`,
+          sub: match?.competition || "Compétition officielle",
+          time: "Direct",
+          body: xgD && xgE
+            ? `Rencontre analysée par le modèle Apex (xG attendus : ${dom} ${xgD} – ${xgE} ${ext}). Posez votre question sur les statistiques, les scénarios de buts ou les cotes.`
+            : `Rencontre prête pour analyse. Posez une question sur les statistiques, la forme, la tactique ou les pronostics de ce match.`,
+        },
+      ];
+    }
+    return [
+      {
+        label: "Apex Football IA",
+        sub: "Analyste & Stratège",
+        time: "Prêt",
+        body: "Bonjour ! Je suis l'analyste football d'Apex. Posez vos questions sur n'importe quel match, club, joueur, concept tactique (pressing, transitions, 4-3-3) ou statistique (xG, loi de Poisson, value bets).",
+      },
+    ];
+  };
+
+  const [sections, setSections] = useState<ChatSectionData[]>(initialSections);
+
+  useEffect(() => {
+    if (phase === "idle" && !submitted) {
+      setSections(initialSections());
+      setTab(tabs[0]);
+    }
+  }, [match?.domicile, match?.exterieur]);
 
   // Simulation de la séquence de streaming de l'IA
   useEffect(() => {
@@ -188,7 +245,7 @@ export default function ChatComposer({
   const send = async () => {
     if (!canSend) return;
     const promptText = draft.trim();
-    const fallback = getFallbackResponse(promptText, tab, dom, ext);
+    const fallback = getFallbackResponse(promptText, tab, match);
 
     // Les salutations et demandes d'aide restent gratuites : elles ne déclenchent pas d'appel IA.
     if (!fallback.conversational) {
@@ -357,13 +414,14 @@ export default function ChatComposer({
         )}
 
         {/* Réponses structurées WhoScored / Gemini */}
-        {(phase === "reply1" || phase === "reply2" || phase === "done") && sections[0] && (
-          <Section {...sections[0]} />
-        )}
-
-        {(phase === "reply2" || phase === "done") && sections[1] && (
-          <Section {...sections[1]} resolving={phase === "reply2"} />
-        )}
+        {(phase === "reply1" || phase === "reply2" || phase === "done") &&
+          sections.map((sec, idx) => (
+            <Section
+              key={idx}
+              {...sec}
+              resolving={phase === "reply1" && idx > 0}
+            />
+          ))}
 
         {phase === "sent" && (
           <div
@@ -472,7 +530,11 @@ export default function ChatComposer({
                 ? "Quota atteint (réinitialisation au prochain match)"
                 : isCoolingDown
                 ? `Veuillez patienter encore ${cooldownRemaining}s...`
-                : `Demander une stat ou analyse sur ${dom}...`
+                : dom && ext
+                ? `Statistique ou question sur ${dom} vs ${ext}...`
+                : dom
+                ? `Demander une stat ou analyse sur ${dom}...`
+                : `Posez une question foot, tactique ou statistique...`
             }
             aria-label="Prompt d'analyse football"
             style={{

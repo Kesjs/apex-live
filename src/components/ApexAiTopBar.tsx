@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import ChatComposer from './ui/chat'
+import type { ChatMatchContext, ChatSectionData } from './ui/chat'
 import { useAiCredits } from '../lib/ai-credits'
 import { useRouter } from '../lib/router'
 import { provider } from '../data'
 import { Icon } from './Icon'
-import type { ChatSectionData } from './ui/chat'
 
 export function ApexAiTopBar() {
   const [ouvert, setOuvert] = useState(false)
@@ -14,7 +14,7 @@ export function ApexAiTopBar() {
   // Détection du match en cours si sur une page /match/:id
   const matchMatch = /^\/match\/([^/]+)/.exec(path)
   const matchId = matchMatch ? decodeURIComponent(matchMatch[1]) : undefined
-  const [matchInfo, setMatchInfo] = useState<{ domicile: string; exterieur: string; competition?: string } | null>(null)
+  const [matchInfo, setMatchInfo] = useState<ChatMatchContext | null>(null)
 
   useEffect(() => {
     if (!matchId) {
@@ -28,6 +28,54 @@ export function ApexAiTopBar() {
           domicile: fiche.equipes.domicile,
           exterieur: fiche.equipes.exterieur,
           competition: fiche.competition,
+          date_heure: fiche.date_heure,
+          score_actuel: fiche.resultat.score_final,
+          statut: fiche.resultat.statut,
+          buts_attendus: fiche.stats?.buts_attendus,
+          stats: fiche.stats ? {
+            domicile: {
+              matchs: fiche.stats.domicile.matchs,
+              buts_marques: fiche.stats.domicile.buts_marques,
+              buts_encaisses: fiche.stats.domicile.buts_encaisses,
+              plus_2_5: fiche.stats.domicile.plus_2_5,
+              sans_encaisser: fiche.stats.domicile.sans_encaisser,
+              derniers: fiche.stats.domicile.derniers,
+            },
+            exterieur: {
+              matchs: fiche.stats.exterieur.matchs,
+              buts_marques: fiche.stats.exterieur.buts_marques,
+              buts_encaisses: fiche.stats.exterieur.buts_encaisses,
+              plus_2_5: fiche.stats.exterieur.plus_2_5,
+              sans_encaisser: fiche.stats.exterieur.sans_encaisser,
+              derniers: fiche.stats.exterieur.derniers,
+            },
+          } : undefined,
+          forme: fiche.forme ? {
+            domicile: fiche.forme.domicile,
+            exterieur: fiche.forme.exterieur,
+          } : undefined,
+          pronostics: fiche.pronostics ? {
+            issue: fiche.pronostics.issue ? {
+              selection: fiche.pronostics.issue.selection,
+              probabilite: Math.round(fiche.pronostics.issue.probabilite * 100),
+              cote: fiche.pronostics.issue.cote,
+              justification: fiche.pronostics.issue.justification,
+            } : undefined,
+            buts: fiche.pronostics.buts ? {
+              selection: fiche.pronostics.buts.selection,
+              probabilite: Math.round(fiche.pronostics.buts.probabilite * 100),
+              cote: fiche.pronostics.buts.cote,
+              justification: fiche.pronostics.buts.justification,
+            } : undefined,
+            bonus: fiche.pronostics.bonus ? {
+              categorie: fiche.pronostics.bonus.categorie,
+              selection: fiche.pronostics.bonus.selection,
+              valeur_observee: fiche.pronostics.bonus.valeur_observee,
+              moyenne_ligue: fiche.pronostics.bonus.moyenne_ligue,
+              justification: fiche.pronostics.bonus.justification,
+            } : undefined,
+            scores: fiche.pronostics.scores,
+          } : undefined,
         })
       }
     }).catch(() => undefined)
@@ -96,7 +144,7 @@ export function ApexAiTopBar() {
                   marginLeft: '4px',
                 }}
               >
-                Assistant de match
+                {matchInfo ? 'Assistant de match' : 'Analyste Football'}
               </span>
             </span>
             {titreMatch && (
@@ -187,7 +235,9 @@ export function ApexAiTopBar() {
               }}
             >
               <span>
-                {matchInfo ? `Posez une question sur ${matchInfo.domicile} – ${matchInfo.exterieur}.` : 'Posez une question à l’assistant football.'}
+                {matchInfo
+                  ? `Posez une question sur ${matchInfo.domicile} – ${matchInfo.exterieur} (forme, xG, cotes, tactique).`
+                  : 'Posez une question à l’analyste football (tactique, championnats, stats xG, règles).'}
               </span>
               <span>{timeUntilReset}</span>
             </div>
@@ -203,7 +253,7 @@ export function ApexAiTopBar() {
                     prompt,
                     tab,
                     history,
-                    match: matchInfo ? { domicile: matchInfo.domicile, exterieur: matchInfo.exterieur } : undefined,
+                    match: matchInfo ?? undefined,
                   }),
                 })
                 if (!response.ok) throw new Error('Assistant indisponible')
