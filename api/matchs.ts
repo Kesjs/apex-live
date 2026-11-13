@@ -1,3 +1,5 @@
+declare const process: any
+
 type Request = { method?: string; query?: Record<string, string | string[]>; url?: string }
 type Response = {
   setHeader: (name: string, value: string) => void
