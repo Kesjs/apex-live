@@ -257,6 +257,8 @@ main {
   .apex-ai-actions { gap: 6px !important; }
   .apex-ai-actions > div { display: none !important; }
   .apex-ai-toggle { min-width: 74px; padding-left: 8px !important; padding-right: 8px !important; }
+}
+
 .community-page { max-width: 760px; }
 .community-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
 .community-heading h1 { margin: 2px 0 4px; font-size: clamp(28px, 5vw, 40px); }

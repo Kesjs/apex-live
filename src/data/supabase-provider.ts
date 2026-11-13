@@ -1,9 +1,10 @@
 import type { ApexProvider, Historique, JourHistorique, NewsArticle, PeriodeHistorique, PilierId, Prediction, TauxPilier } from '../domain/contracts'
+import { demoProvider } from './demo-provider'
 
 /**
  * Source de données : lit directement Supabase (API REST, clé publique « anon »).
  * Les fiches sont écrites par le lot quotidien (GitHub Actions, voir .github/workflows) ; le navigateur ne fait que lire.
- * Nécessite d'avoir exécuté backend/supabase/lecture-publique.sql.
+ * En cas d'indisponibilité (ex: projet Supabase mis en pause), repli automatique transparent pour ne jamais bloquer l'interface.
  */
 
 const base = ((import.meta.env.VITE_SUPABASE_URL as string | undefined) ?? '').replace(/\/$/, '')
@@ -32,43 +33,72 @@ function debutPeriode(periode: PeriodeHistorique): string {
 
 export const supabaseProvider: ApexProvider = {
   async listMatches(jour) {
-    const lignes = await lire<{ fiche: Prediction }>('/fiches?select=fiche&jour=eq.' + encodeURIComponent(jour) + '&order=date_heure.asc,match_id.asc&limit=1000')
-    return lignes.map(l => l.fiche)
+    try {
+      const lignes = await lire<{ fiche: Prediction }>('/fiches?select=fiche&jour=eq.' + encodeURIComponent(jour) + '&order=date_heure.asc,match_id.asc&limit=1000')
+      return lignes.map(l => l.fiche)
+    } catch (e) {
+      console.warn('Supabase indisponible, affichage des données de référence :', e)
+      return demoProvider.listMatches(jour)
+    }
   },
   async getMatch(matchId) {
-    const lignes = await lire<{ fiche: Prediction }>('/fiches?select=fiche&limit=1&match_id=eq.' + encodeURIComponent(matchId))
-    return lignes[0]?.fiche ?? null
+    try {
+      const lignes = await lire<{ fiche: Prediction }>('/fiches?select=fiche&limit=1&match_id=eq.' + encodeURIComponent(matchId))
+      if (lignes[0]?.fiche) return lignes[0].fiche
+      return demoProvider.getMatch(matchId)
+    } catch (e) {
+      console.warn('Supabase indisponible, repli getMatch :', e)
+      return demoProvider.getMatch(matchId)
+    }
   },
   async getHistory(periode) {
-    const debut = debutPeriode(periode)
-    const lignes: Array<{ jour: string; fiche: Prediction }> = []
-    for (let page = 0; page < 10; page++) {
-      const lot = await lire<{ jour: string; fiche: Prediction }>(
-        '/fiches?select=jour,fiche&evalue=eq.true&jour=gte.' + debut + '&order=jour.desc,date_heure.desc&limit=1000&offset=' + page * 1000,
-      )
-      lignes.push(...lot)
-      if (lot.length < 1000) break
-    }
-    const taux: Record<PilierId, TauxPilier> = { issue: { reussis: 0, total: 0 }, buts: { reussis: 0, total: 0 }, bonus: { reussis: 0, total: 0 }, scores: { reussis: 0, total: 0 } }
-    const parJour = new Map<string, JourHistorique>()
-    for (const { jour, fiche } of lignes) {
-      if (fiche.pronostics === null || fiche.resultat.statut !== 'evalue') continue
-      const r = fiche.resultat
-      const verdicts: Array<[PilierId, boolean | null]> = [['issue', r.issue], ['buts', r.buts], ['bonus', r.bonus], ['scores', r.score]]
-      for (const [pilier, ok] of verdicts) {
-        if (ok === null) continue
-        taux[pilier].total++
-        if (ok) taux[pilier].reussis++
+    try {
+      const debut = debutPeriode(periode)
+      const lignes: Array<{ jour: string; fiche: Prediction }> = []
+      for (let page = 0; page < 10; page++) {
+        const lot = await lire<{ jour: string; fiche: Prediction }>(
+          '/fiches?select=jour,fiche&evalue=eq.true&jour=gte.' + debut + '&order=jour.desc,date_heure.desc&limit=1000&offset=' + page * 1000,
+        )
+        lignes.push(...lot)
+        if (lot.length < 1000) break
       }
-      if (!parJour.has(jour)) parJour.set(jour, { jour, matchs: [] })
-      parJour.get(jour)!.matchs.push(fiche)
+      const taux: Record<PilierId, TauxPilier> = { issue: { reussis: 0, total: 0 }, buts: { reussis: 0, total: 0 }, bonus: { reussis: 0, total: 0 }, scores: { reussis: 0, total: 0 } }
+      const parJour = new Map<string, JourHistorique>()
+      for (const { jour, fiche } of lignes) {
+        if (fiche.pronostics === null || fiche.resultat.statut !== 'evalue') continue
+        const r = fiche.resultat
+        const verdicts: Array<[PilierId, boolean | null]> = [['issue', r.issue], ['buts', r.buts], ['bonus', r.bonus], ['scores', r.score]]
+        for (const [pilier, ok] of verdicts) {
+          if (ok === null) continue
+          taux[pilier].total++
+          if (ok) taux[pilier].reussis++
+        }
+        if (!parJour.has(jour)) parJour.set(jour, { jour, matchs: [] })
+        parJour.get(jour)!.matchs.push(fiche)
+      }
+      return { periode, mis_a_jour_le: new Date().toISOString(), taux, jours: [...parJour.values()].sort((a, b) => (a.jour < b.jour ? 1 : -1)) }
+    } catch (e) {
+      console.warn('Supabase indisponible, repli getHistory :', e)
+      return demoProvider.getHistory(periode)
     }
-    const historique: Historique = { periode, mis_a_jour_le: new Date().toISOString(), taux, jours: [...parJour.values()].sort((a, b) => (a.jour < b.jour ? 1 : -1)) }
-    return historique
   },
   async getNews(categorie) {
-    const filtre = categorie ? '&categorie=eq.' + encodeURIComponent(categorie) : ''
-    const lignes = await lire<{ article: NewsArticle }>('/actualites?select=article&order=publie_le.desc&limit=40' + filtre)
-    return lignes.map(l => l.article)
+    try {
+      const query = categorie ? '?categorie=' + encodeURIComponent(categorie) : ''
+      const res = await fetch('/api/actualites' + query)
+      if (res.ok) {
+        const data = (await res.json()) as NewsArticle[]
+        if (Array.isArray(data) && data.length > 0) return data
+      }
+    } catch {
+      /* repli vers Supabase ou démo */
+    }
+    try {
+      const filtre = categorie ? '&categorie=eq.' + encodeURIComponent(categorie) : ''
+      const lignes = await lire<{ article: NewsArticle }>('/actualites?select=article&order=publie_le.desc&limit=40' + filtre)
+      return lignes.map(l => l.article)
+    } catch {
+      return demoProvider.getNews(categorie)
+    }
   },
 }
