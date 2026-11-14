@@ -13,6 +13,13 @@ import type { ApexProvider, Historique, NewsArticle, PeriodeHistorique, Predicti
  */
 
 const base = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? ''
+const sessionMatches = new Map<string, Prediction>()
+
+function rememberMatches(list: Prediction[] | null | undefined): Prediction[] {
+  if (!list) return []
+  for (const m of list) sessionMatches.set(m.match_id, m)
+  return list
+}
 
 async function requete<T>(chemin: string): Promise<{ status: number; data: T | null }> {
   let reponse: Response
@@ -33,15 +40,25 @@ async function requete<T>(chemin: string): Promise<{ status: number; data: T | n
 export const httpProvider: ApexProvider = {
   async listMatches(jour) {
     const { data } = await requete<Prediction[]>('/api/matchs?date=' + encodeURIComponent(jour))
-    return data ?? []
+    return rememberMatches(data)
   },
   async nextMatchday(from) {
     const { data } = await requete<{ date: string | null; matchs: Prediction[] }>('/api/matchs?next=1&from=' + encodeURIComponent(from))
-    return data ?? { date: null, matchs: [] }
+    return { date: data?.date ?? null, matchs: rememberMatches(data?.matchs) }
   },
   async getMatch(matchId) {
-    const { data } = await requete<Prediction>('/api/matchs/' + encodeURIComponent(matchId))
-    return data
+    try {
+      const { data } = await requete<Prediction>('/api/matchs/' + encodeURIComponent(matchId))
+      if (data) {
+        sessionMatches.set(matchId, data)
+        return data
+      }
+    } catch (err) {
+      const cached = sessionMatches.get(matchId)
+      if (cached) return cached
+      throw err
+    }
+    return sessionMatches.get(matchId) ?? null
   },
   async getHistory(periode: PeriodeHistorique) {
     const { data } = await requete<Historique>('/api/historique?periode=' + encodeURIComponent(periode))

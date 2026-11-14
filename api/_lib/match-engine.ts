@@ -247,17 +247,26 @@ function applyMatchResult(
 
 // ---------- API-Football (international break fallback + bookmakers) ----------
 
+function apifHasError(data: { errors?: unknown } | null): boolean {
+  if (!data || !data.errors) return false
+  if (Array.isArray(data.errors)) return data.errors.length > 0
+  if (typeof data.errors === 'object') return Object.keys(data.errors as Record<string, unknown>).length > 0
+  return true
+}
+
 async function fetchApifFixtures(jour: string, apiKey?: string): Promise<ApifFixture[]> {
   if (!apiKey) return []
   const cacheKey = `apif:fixtures:${jour}`
   const hit = cachedGet<ApifFixture[]>(cacheKey)
   if (hit) return hit
-  const data = await fetchJson<{ response?: ApifFixture[] }>(
+  const data = await fetchJson<{ errors?: unknown; response?: ApifFixture[] }>(
     `${API_FOOTBALL_BASE}/fixtures?date=${jour}`,
     { 'x-apisports-key': apiKey },
     10_000,
   )
-  return cachedSet(cacheKey, data?.response ?? [], 60 * 60_000)
+  const list = data?.response ?? []
+  if (apifHasError(data) || list.length === 0) return list
+  return cachedSet(cacheKey, list, 60 * 60_000)
 }
 
 interface ApifBookmakerOdds {
@@ -277,6 +286,7 @@ async function fetchApifOddsForFixture(fixtureId: number, apiKey?: string): Prom
   if (hit !== null) return hit
 
   type OddsResp = {
+    errors?: unknown
     response?: Array<{
       bookmakers?: Array<{
         id?: number
@@ -290,8 +300,9 @@ async function fetchApifOddsForFixture(fixtureId: number, apiKey?: string): Prom
     { 'x-apisports-key': apiKey },
     8_000,
   )
+  if (apifHasError(data)) return null
   const bookmakers = data?.response?.[0]?.bookmakers ?? []
-  if (bookmakers.length === 0) return cachedSet(cacheKey, null, 2 * 60 * 60_000)
+  if (bookmakers.length === 0) return cachedSet(cacheKey, null, 15 * 60_000)
 
   const prefOrder = ['1xBet', 'Bet365', 'Pinnacle', 'Unibet', 'Bwin']
   const ordered = [...bookmakers].sort((a, b) => {
@@ -361,11 +372,12 @@ async function fetchApifPrediction(fixtureId: number, apiKey?: string): Promise<
   const cacheKey = `apif:pred:${fixtureId}`
   const hit = cachedGet<ApifPredictionData | null>(cacheKey)
   if (hit !== null) return hit
-  const data = await fetchJson<{ response?: ApifPredictionData[] }>(
+  const data = await fetchJson<{ errors?: unknown; response?: ApifPredictionData[] }>(
     `${API_FOOTBALL_BASE}/predictions?fixture=${fixtureId}`,
     { 'x-apisports-key': apiKey },
     8_000,
   )
+  if (apifHasError(data)) return null
   return cachedSet(cacheKey, data?.response?.[0] ?? null, 4 * 60 * 60_000)
 }
 
@@ -573,14 +585,14 @@ export async function getMatchesForDay(jour: string, env: Record<string, string 
     return fiches.sort((a, b) => a.date_heure.localeCompare(b.date_heure))
   }
 
-  // Fallback trêve internationale / coupes : API-Football affiches majeures (plafond 6 matchs)
+  // Fallback trêve internationale / coupes : API-Football affiches majeures (plafond 4 matchs = 9 req max <= 10 req/min)
   if (!apifKey) return []
   const rawApif = await fetchApifFixtures(jour, apifKey)
   const selected = rawApif
     .map(f => ({ f, score: apifScore(f) }))
     .filter(x => x.score >= 30)
     .sort((a, b) => b.score - a.score)
-    .slice(0, 6)
+    .slice(0, 4)
     .map(x => x.f)
 
   const fiches = (await Promise.all(selected.map(f => buildFromApifFixture(f, apifKey, now)))).filter(
@@ -590,6 +602,9 @@ export async function getMatchesForDay(jour: string, env: Record<string, string 
 }
 
 export async function getMatchById(id: string, env: Record<string, string | undefined>): Promise<Prediction | null> {
+  const hit = cachedGet<Prediction>(`match:${id}`)
+  if (hit) return hit
+
   const now = new Date()
   const fdKey = env.FOOTBALL_DATA_KEY?.trim()
   const apifKey = env.API_FOOTBALL_KEY?.trim()
@@ -597,13 +612,19 @@ export async function getMatchById(id: string, env: Record<string, string | unde
   if (id.startsWith('apif-') && apifKey) {
     const rawId = Number(id.replace('apif-', ''))
     if (!Number.isFinite(rawId)) return null
-    const data = await fetchJson<{ response?: ApifFixture[] }>(
+    const data = await fetchJson<{ errors?: unknown; response?: ApifFixture[] }>(
       `${API_FOOTBALL_BASE}/fixtures?id=${rawId}`,
       { 'x-apisports-key': apifKey },
       8_000,
     )
-    const f = data?.response?.[0]
-    return f ? buildFromApifFixture(f, apifKey, now) : null
+    let f = !apifHasError(data) ? data?.response?.[0] : undefined
+    if (!f) {
+      const todayPool = await fetchApifFixtures(isoJour(now), apifKey)
+      f = todayPool.find(item => item.fixture?.id === rawId)
+    }
+    if (!f) return null
+    const fiche = await buildFromApifFixture(f, apifKey, now)
+    return fiche ? cachedSet(`match:${id}`, fiche, 5 * 60_000) : null
   }
 
   if (!fdKey) return null

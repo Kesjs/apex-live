@@ -76,7 +76,6 @@ function Fiche({ fiche, retour, actualiser, enCours, erreur }: { fiche: Predicti
       <div className="stack match-main">
         {onglet === 'resume' && <>
           {status.label !== 'À venir' && <Resultat fiche={fiche} />}
-          <FaitsDuMatch fiche={fiche} />
           {fiche.stats && <StatsComparees fiche={fiche} />}
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
             {p && <button className="btn btn-secondary" type="button" onClick={() => setOnglet('analyse')}>{status.final ? 'Voir l’analyse publiée avant le match' : 'Comprendre les pronostics Apex'}<Icon name="chevron" size={16} /></button>}
@@ -98,6 +97,7 @@ function Fiche({ fiche, retour, actualiser, enCours, erreur }: { fiche: Predicti
       </div>
       <aside className="stack match-context" aria-label="Contexte du match">
         {fiche.forme && <section className="stack-sm"><SectionTitle id="forme">Forme avant le match</SectionTitle><FormStrip forme={fiche.forme} domicile={fiche.equipes.domicile} exterieur={fiche.equipes.exterieur} /></section>}
+        <FaitsDuMatch fiche={fiche} />
         <section className="match-ad stack-sm" aria-label="Offre partenaire"><SectionTitle id="offre-partenaire" aside={<span className="muted small">Publicité</span>}>Partenaire</SectionTitle><ApexPromoCarousel /><p className="muted small">Contenu sponsorisé, indépendant de l’analyse Apex.</p></section>
       </aside>
     </div>
