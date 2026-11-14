@@ -9,7 +9,18 @@ import ChatComposer from './ui/chat'
  *   - Tiroir latéral sur desktop (430px) et Bottom Sheet sur mobile (86dvh)
  */
 export function ApexAiTopBar() {
-  const { isOpen, activeMatch, screenContext, messages, creditsLeft, maxCredits, open, close, resetConversation } = useAiChat()
+  const {
+    isOpen,
+    activeMatch,
+    screenContext,
+    contextAttached,
+    messages,
+    creditsLeft,
+    maxCredits,
+    open,
+    close,
+    resetConversation,
+  } = useAiChat()
 
   useEffect(() => {
     if (!isOpen) return
@@ -20,9 +31,11 @@ export function ApexAiTopBar() {
     return () => window.removeEventListener('keydown', onKey)
   }, [isOpen, close])
 
-  const subText = activeMatch
-    ? `${activeMatch.equipes.domicile} · ${activeMatch.equipes.exterieur}`
-    : screenContext?.pageTitle || 'Analyste football & cotes'
+  const subText = !contextAttached
+    ? 'Discussion libre · Assistant Apex'
+    : activeMatch
+      ? `${activeMatch.equipes.domicile} · ${activeMatch.equipes.exterieur}`
+      : screenContext?.pageTitle || 'Assistant Apex · Football & cotes'
 
   return (
     <>

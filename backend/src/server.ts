@@ -1,6 +1,13 @@
 import { createServer } from 'node:http'
 import type { Server } from 'node:http'
 import type { PeriodeHistorique } from '../../src/domain/contracts.ts'
+import {
+  generateApexChat,
+  streamApexChat,
+  type ChatMatchContext,
+  type HistoryTurn,
+  type ScreenContext,
+} from '../../api/_lib/chat-engine.ts'
 import { construireHistorique } from './historique.ts'
 import { fetchLiveNews } from './sources/rss-news.ts'
 import type { Stockage } from './store.ts'
@@ -35,43 +42,26 @@ export function creerServeur(store: Stockage, opts: { origine?: string; maintena
         let body: {
           prompt?: string
           tab?: string
-          history?: string[]
-          match?: {
-            domicile?: string
-            exterieur?: string
-            competition?: string
-            date_heure?: string
-            score_actuel?: string
-            statut?: string
-            buts_attendus?: { domicile: number; exterieur: number }
-            stats?: {
-              domicile?: { matchs: number; buts_marques: number; buts_encaisses: number; plus_2_5: number; sans_encaisser: number; derniers: string[] }
-              exterieur?: { matchs: number; buts_marques: number; buts_encaisses: number; plus_2_5: number; sans_encaisser: number; derniers: string[] }
-            }
-            forme?: { domicile: string[]; exterieur: string[] }
-            pronostics?: {
-              issue?: { selection: string; probabilite: number; cote?: number; justification?: string }
-              buts?: { selection: string; probabilite: number; cote?: number; justification?: string }
-              bonus?: { categorie: string; selection: string; valeur_observee?: number; moyenne_ligue?: number; justification?: string }
-              scores?: Array<{ score: string; probabilite: number }>
-            }
-          }
+          stream?: boolean
+          history?: Array<string | HistoryTurn>
+          match?: ChatMatchContext
+          screenContext?: ScreenContext
         } = {}
-        try { body = JSON.parse(Buffer.concat(buffers).toString('utf-8')) } catch { /* ignore */ }
+        try { body = JSON.parse(Buffer.concat(buffers).toString('utf-8')) as typeof body } catch { /* ignore */ }
         const prompt = typeof body.prompt === 'string' ? body.prompt.trim() : ''
-        if (!prompt || prompt.length > 500) return envoyer(400, { error: 'Question invalide' })
+        if (!prompt || prompt.length > 1200) return envoyer(400, { error: 'Question invalide (1 à 1200 caractères).' })
 
-        const key = process.env.GEMINI_API_KEY
-        const history = Array.isArray(body.history) ? body.history.slice(-8).filter((item) => typeof item === 'string') : []
+        const key = process.env.GEMINI_API_KEY?.trim()
         const m = body.match
 
         if (!key) {
           const bodyDesc = m?.domicile
-            ? `[Mode local sans clé API] Pour ${m.domicile} - ${m.exterieur} : vous pouvez consulter les statistiques détaillées (xG, forme, issue 1N2) directement sur les cartes de la fiche. Pour activer l'analyse conversationnelle Gemini en direct, configurez GEMINI_API_KEY dans votre fichier .env.`
-            : `[Mode local sans clé API] Vous pouvez poser n'importe quelle question sur le football, la tactique ou les statistiques. Pour activer les réponses de Gemini en direct, configurez GEMINI_API_KEY dans votre fichier .env.`
+            ? `[Mode local sans clé API] Pour ${m.domicile} - ${m.exterieur} : vous pouvez consulter les statistiques détaillées (xG, forme, issue 1N2) directement sur les cartes de la fiche. Pour activer Apex IA en direct, configurez GEMINI_API_KEY dans votre fichier .env.`
+            : `[Mode local sans clé API] Configurez GEMINI_API_KEY dans votre fichier .env pour activer la conversation en direct avec Apex IA.`
           return envoyer(200, {
+            reply: bodyDesc,
             sections: [{
-              label: m?.domicile ? `${m.domicile} vs ${m.exterieur}` : 'Apex Football IA',
+              label: m?.domicile ? `${m.domicile} · ${m.exterieur}` : 'Apex IA',
               sub: 'Mode local',
               time: 'Info',
               body: bodyDesc,
@@ -79,112 +69,55 @@ export function creerServeur(store: Stockage, opts: { origine?: string; maintena
           })
         }
 
-        const parts: string[] = [
-          `Tu es Apex Football IA, l'analyste football d'élite et conseiller stratégique de l'application Apex.`,
-          `Ton style : passionné, analytique, direct, précis et pédagogue. Tu t'exprimes toujours en français impeccable avec un vocabulaire footballistique riche.`
-        ]
+        const payload = {
+          prompt,
+          tab: typeof body.tab === 'string' ? body.tab : undefined,
+          history: body.history,
+          match: body.match,
+          screenContext: body.screenContext,
+        }
+        const preferredModel = process.env.GEMINI_MODEL?.trim()
+        const accept = String(req.headers.accept ?? '')
+        const wantStream = body.stream !== false && (body.stream === true || accept.includes('text/event-stream'))
 
-        if (m && m.domicile && m.exterieur) {
-          const xgDom = m.buts_attendus?.domicile !== undefined ? m.buts_attendus.domicile.toFixed(2) : 'N/D'
-          const xgExt = m.buts_attendus?.exterieur !== undefined ? m.buts_attendus.exterieur.toFixed(2) : 'N/D'
-          const formeDom = m.forme?.domicile?.join('-') || 'N/D'
-          const formeExt = m.forme?.exterieur?.join('-') || 'N/D'
-
-          parts.push(
-            ``,
-            `--- CONTEXTE DE LA RENCONTRE OUVERTE ---`,
-            `Compétition : ${m.competition || 'Compétition officielle'}`,
-            `Match : ${m.domicile} (Domicile) vs ${m.exterieur} (Extérieur)`,
-            m.date_heure ? `Date / Heure : ${m.date_heure}` : '',
-            m.score_actuel ? `Score final/actuel : ${m.score_actuel}` : '',
-            `Données statistiques du modèle Apex pour cette rencontre :`,
-            `- Buts attendus (xG modèle Apex) : ${m.domicile} ${xgDom} - ${xgExt} ${m.exterieur}`,
-            `- Forme récente (5 derniers matchs) : ${m.domicile} [${formeDom}] | ${m.exterieur} [${formeExt}]`,
-            m.stats?.domicile ? `- Stats ${m.domicile} : ${m.stats.domicile.buts_marques} buts/m marqués, ${m.stats.domicile.buts_encaisses} encaissés/m, ${Math.round((m.stats.domicile.plus_2_5 || 0) * 100)}% +2.5 buts, ${Math.round((m.stats.domicile.sans_encaisser || 0) * 100)}% clean sheets` : '',
-            m.stats?.exterieur ? `- Stats ${m.exterieur} : ${m.stats.exterieur.buts_marques} buts/m marqués, ${m.stats.exterieur.buts_encaisses} encaissés/m, ${Math.round((m.stats.exterieur.plus_2_5 || 0) * 100)}% +2.5 buts, ${Math.round((m.stats.exterieur.sans_encaisser || 0) * 100)}% clean sheets` : '',
-            m.pronostics?.issue ? `- Modèle Issue 1N2 : ${m.pronostics.issue.selection} (${m.pronostics.issue.probabilite}%)${m.pronostics.issue.cote ? ` [Cote : ${m.pronostics.issue.cote}]` : ''} - ${m.pronostics.issue.justification || ''}` : '',
-            m.pronostics?.buts ? `- Modèle Buts : ${m.pronostics.buts.selection} (${m.pronostics.buts.probabilite}%)${m.pronostics.buts.cote ? ` [Cote : ${m.pronostics.buts.cote}]` : ''} - ${m.pronostics.buts.justification || ''}` : '',
-            m.pronostics?.bonus ? `- Modèle Bonus (${m.pronostics.bonus.categorie}) : ${m.pronostics.bonus.selection} (observé : ${m.pronostics.bonus.valeur_observee ?? 'N/D'} vs ligue : ${m.pronostics.bonus.moyenne_ligue ?? 'N/D'}) - ${m.pronostics.bonus.justification || ''}` : '',
-            m.pronostics?.scores && m.pronostics.scores[0] ? `- Score exact repère : ${m.pronostics.scores[0].score} (${Math.round(m.pronostics.scores[0].probabilite * 100)}%)` : '',
-            `----------------------------------------`
+        if (wantStream) {
+          const ac = new AbortController()
+          req.on('close', () => ac.abort())
+          let headersSent = false
+          const result = await streamApexChat(
+            payload,
+            { apiKey: key, preferredModel, connectTimeoutMs: 4500, totalTimeoutMs: 18_000, signal: ac.signal },
+            (ev) => {
+              if (!headersSent) {
+                headersSent = true
+                res.writeHead(200, {
+                  'content-type': 'text/event-stream; charset=utf-8',
+                  'access-control-allow-origin': origine,
+                  'cache-control': 'no-cache, no-transform',
+                  'connection': 'keep-alive',
+                })
+                res.flushHeaders()
+              }
+              res.write(`data: ${JSON.stringify(ev)}\n\n`)
+            },
           )
-        } else {
-          parts.push(
-            ``,
-            `Contexte : Navigation générale (aucun match particulier sélectionné). Tu es une encyclopédie et un stratège du football : tactique, championnats européens, actualités, joueurs, règles du jeu, ou méthodologies statistiques (xG, loi de Poisson, gestion de bankroll).`
-          )
+          if (result.ok || result.committed) return void res.end()
+          return envoyer(502, { error: result.error })
         }
 
-        parts.push(
-          ``,
-          `DIRECTIVES D'ANALYSE :`,
-          `1. Si la question porte sur le match ouvert (${m?.domicile ?? ''} vs ${m?.exterieur ?? ''}) : sers-toi des statistiques et pronostics Apex ci-dessus pour argumenter avec précision (xG, forme, tendances buts/corners/cartons).`,
-          `2. Si la question est générale ou porte sur un autre sujet (culture, tactique, règles, transferts, gestion de bankroll, explication de xG/Poisson) : réponds avec ta pleine expertise de football sans jamais refuser en prétextant un manque de données en direct. Ne force JAMAIS de lien artificiel avec un match si l'utilisateur pose une question générale.`,
-          `3. Style et concision : réponds avec clarté en 2 à 4 paragraphes courts ou puces aérées (max 250-300 mots). Pas de remplissage. Sois percutant.`
-        )
-
-        if (history.length > 0) {
-          parts.push(
-            ``,
-            `Historique récent de la discussion :`,
-            ...history.map((h, i) => `[${i + 1}] ${h}`)
-          )
-        }
-
-        parts.push(
-          ``,
-          `Onglet thématique : ${body.tab || 'Général'}`,
-          `Question : ${prompt}`
-        )
-
-        const instruction = parts.filter(Boolean).join('\n')
-        const candidateModels = [
-          process.env.GEMINI_MODEL,
-          'gemini-3.5-flash-lite',
-          'gemini-3.8-flash',
-          'gemini-flash-lite-latest',
-          'gemini-flash-latest',
-        ].filter((cm): cm is string => typeof cm === 'string' && cm.trim().length > 0)
-
-        let lastError = 'Connexion IA impossible'
-        let answered = false
-
-        for (const mod of candidateModels) {
-          try {
-            const rep = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${mod}:generateContent?key=${encodeURIComponent(key)}`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: [{ role: 'user', parts: [{ text: instruction }] }],
-                generationConfig: { temperature: 0.4, maxOutputTokens: 500 },
-              }),
-            })
-            if (!rep.ok) {
-              lastError = `Modèle ${mod} indisponible (${rep.status})`
-              continue
-            }
-            const data = (await rep.json()) as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> }
-            const text = data.candidates?.[0]?.content?.parts?.map((part) => part.text || '').join('').trim()
-            if (!text) continue
-
-            const label = m?.domicile ? `${m.domicile} vs ${m.exterieur}` : 'Apex Football IA'
-            answered = true
-            envoyer(200, {
-              sections: [{
-                label,
-                sub: body.tab ? `Analyse ${body.tab}` : 'Expert Foot',
-                time: 'En direct',
-                body: text,
-              }],
-            })
-            break
-          } catch {
-            lastError = `Erreur de communication avec ${mod}`
-          }
-        }
-
-        if (!answered) return envoyer(502, { error: lastError })
-        return
+        const result = await generateApexChat(payload, { apiKey: key, preferredModel, connectTimeoutMs: 5500 })
+        if (!result.ok) return envoyer(502, { error: result.error })
+        const label = m?.domicile ? `${m.domicile} · ${m.exterieur}` : 'Apex IA'
+        return envoyer(200, {
+          model: result.model,
+          reply: result.text,
+          sections: [{
+            label,
+            sub: body.tab && body.tab !== 'Général' && body.tab !== 'Libre' ? `Mode ${body.tab}` : 'Assistant Apex',
+            time: 'En direct',
+            body: result.text,
+          }],
+        }, 'no-store')
       }
 
       if (req.method !== 'GET') return envoyer(405, { erreur: 'Méthode non autorisée.' })

@@ -3,57 +3,114 @@ import { useAiChat } from '../../lib/ai-chat'
 import { Icon } from '../Icon'
 import './chat.css'
 
-const MODES = ['Général', 'Value Bets', 'Tactique', 'Statistiques'] as const
+const MODES = ['Libre', 'Value Bets', 'Tactique', 'Statistiques'] as const
 
-function renderInlineBold(text: string) {
-  const tokens = text.split(/(\*\*[^*]+\*\*)/g)
+function renderInlineMarkdown(text: string) {
+  const tokens = text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g)
   return tokens.map((tok, i) => {
     if (tok.startsWith('**') && tok.endsWith('**') && tok.length > 4) {
       return <strong key={i}>{tok.slice(2, -2)}</strong>
+    }
+    if (tok.startsWith('`') && tok.endsWith('`') && tok.length > 2) {
+      return (
+        <code className="apex-chat-code" key={i}>
+          {tok.slice(1, -1)}
+        </code>
+      )
     }
     return <Fragment key={i}>{tok}</Fragment>
   })
 }
 
-function FormattedReply({ text }: { text: string }) {
+function FormattedReply({ text, streaming }: { text: string; streaming?: boolean }) {
   const lines = text.split('\n').map(l => l.trimEnd())
-  const blocks: Array<{ type: 'p'; content: string } | { type: 'ul'; items: string[] }> = []
+  const blocks: Array<
+    | { type: 'h'; content: string }
+    | { type: 'p'; content: string }
+    | { type: 'ul'; items: string[] }
+    | { type: 'ol'; items: string[] }
+  > = []
 
   for (const raw of lines) {
     const line = raw.trim()
     if (!line) continue
+    const heading = /^#{1,3}\s+(.*)$/.exec(line)
+    if (heading) {
+      blocks.push({ type: 'h', content: heading[1] })
+      continue
+    }
     const bullet = /^[-•*]\s+(.*)$/.exec(line)
     if (bullet) {
       const last = blocks[blocks.length - 1]
       if (last && last.type === 'ul') last.items.push(bullet[1])
       else blocks.push({ type: 'ul', items: [bullet[1]] })
-    } else {
-      blocks.push({ type: 'p', content: line })
+      continue
     }
+    const ordered = /^\d+[.)]\s+(.*)$/.exec(line)
+    if (ordered) {
+      const last = blocks[blocks.length - 1]
+      if (last && last.type === 'ol') last.items.push(ordered[1])
+      else blocks.push({ type: 'ol', items: [ordered[1]] })
+      continue
+    }
+    blocks.push({ type: 'p', content: line })
   }
 
   return (
-    <>
-      {blocks.map((b, idx) =>
-        b.type === 'ul' ? (
-          <ul className="apex-chat-bubble__ul" key={idx}>
-            {b.items.map((item, j) => (
-              <li key={j}>{renderInlineBold(item)}</li>
-            ))}
-          </ul>
-        ) : (
+    <div className={streaming ? 'apex-chat-stream' : undefined}>
+      {blocks.map((b, idx) => {
+        if (b.type === 'h') {
+          return (
+            <p className="apex-chat-bubble__h" key={idx}>
+              {renderInlineMarkdown(b.content)}
+            </p>
+          )
+        }
+        if (b.type === 'ul') {
+          return (
+            <ul className="apex-chat-bubble__ul" key={idx}>
+              {b.items.map((item, j) => (
+                <li key={j}>{renderInlineMarkdown(item)}</li>
+              ))}
+            </ul>
+          )
+        }
+        if (b.type === 'ol') {
+          return (
+            <ol className="apex-chat-bubble__ol" key={idx}>
+              {b.items.map((item, j) => (
+                <li key={j}>{renderInlineMarkdown(item)}</li>
+              ))}
+            </ol>
+          )
+        }
+        return (
           <p className="apex-chat-bubble__p" key={idx}>
-            {renderInlineBold(b.content)}
+            {renderInlineMarkdown(b.content)}
           </p>
-        ),
-      )}
-    </>
+        )
+      })}
+      {streaming && <span className="apex-chat-cursor" aria-hidden="true" />}
+    </div>
   )
 }
 
 export default function ChatComposer() {
-  const { activeMatch, screenContext, messages, sending, error, creditsLeft, sendMessage } = useAiChat()
-  const [tab, setTab] = useState<(typeof MODES)[number]>('Général')
+  const {
+    activeMatch,
+    screenContext,
+    contextAttached,
+    setContextAttached,
+    messages,
+    sending,
+    streamingId,
+    error,
+    creditsLeft,
+    sendMessage,
+    stopGenerating,
+  } = useAiChat()
+
+  const [tab, setTab] = useState<(typeof MODES)[number]>('Libre')
   const [draft, setDraft] = useState('')
   const threadRef = useRef<HTMLDivElement | null>(null)
   const inputRef = useRef<HTMLTextAreaElement | null>(null)
@@ -64,27 +121,40 @@ export default function ChatComposer() {
 
   useEffect(() => {
     const el = threadRef.current
-    if (el) el.scrollTop = el.scrollHeight
-  }, [messages.length, sending])
+    if (!el) return
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight
+    if (distanceFromBottom < 180 || sending) {
+      el.scrollTop = el.scrollHeight
+    }
+  }, [messages, sending])
 
-  const quickPrompts: string[] = activeMatch
+  useEffect(() => {
+    const el = inputRef.current
+    if (!el) return
+    el.style.height = 'auto'
+    el.style.height = `${Math.min(el.scrollHeight, 112)}px`
+  }, [draft])
+
+  const contextLabel = activeMatch
+    ? `${activeMatch.equipes.domicile} · ${activeMatch.equipes.exterieur}`
+    : screenContext?.pageTitle || ''
+
+  const quickPrompts: string[] = contextAttached && activeMatch
     ? [
-        `Pourquoi le modèle privilégie ${activeMatch.pronostics?.issue.court ?? 'cette issue'} ?`,
-        `Quel est le principal risque sur ${activeMatch.equipes.domicile} · ${activeMatch.equipes.exterieur} ?`,
-        'Y a-t-il une vraie Value sur ce match ?',
-        'Comparer forme et buts attendus',
+        `Résume les forces de ${activeMatch.equipes.domicile} · ${activeMatch.equipes.exterieur}`,
+        'Le pronostic a-t-il une vraie Value ?',
+        'Quel scénario tactique te semble le plus probable ?',
       ]
-    : screenContext?.route === '/actualites'
+    : contextAttached && screenContext?.route === '/actualites'
       ? [
-          'Résume les actualités football marquantes du jour',
-          'Quels joueurs ou équipes sont sous pression actuellement ?',
-          'Impact des absences sur les prochains matchs',
+          'Fais-moi un point rapide sur les news du jour',
+          'Quelles infos ont un impact sportif direct ?',
+          'Explique comment analyser une absence majeure',
         ]
       : [
-          'Quel est le meilleur Value Bet affiché aujourd’hui ?',
-          'Quels sont les pronostics les plus fiables ?',
-          'Comment fonctionne le modèle Poisson + xG d’Apex ?',
-          'Quelle règle de mise suivre pour gérer sa bankroll ?',
+          'Quelles affiches valent le coup aujourd’hui ?',
+          'Explique-moi le concept de Value Bet simplement',
+          'Comment lire les xG sur Apex ?',
         ]
 
   const submit = async (textToSend?: string) => {
@@ -96,7 +166,7 @@ export default function ChatComposer() {
 
   return (
     <div className="apex-chat-panel">
-      <div className="apex-chat-modes" role="group" aria-label="Angle d’analyse">
+      <div className="apex-chat-modes" role="group" aria-label="Angle de réponse">
         {MODES.map(m => (
           <button
             key={m}
@@ -110,18 +180,33 @@ export default function ChatComposer() {
         ))}
       </div>
 
+      {contextLabel && (
+        <div className="apex-chat-ctx-bar">
+          <span className="apex-chat-ctx-bar__label">
+            {contextAttached ? `Contexte lié : ${contextLabel}` : `Contexte ignoré (${contextLabel})`}
+          </span>
+          <button
+            type="button"
+            className="apex-chat-ctx-bar__btn"
+            onClick={() => setContextAttached(!contextAttached)}
+          >
+            {contextAttached ? 'Discussion libre' : 'Lier'}
+          </button>
+        </div>
+      )}
+
       <div className="apex-chat-thread" ref={threadRef} aria-live="polite">
         {messages.length === 0 ? (
           <div className="apex-chat-empty">
             <p className="apex-chat-empty__title">
-              {activeMatch
-                ? `Analyse en contexte · ${activeMatch.equipes.domicile} vs ${activeMatch.equipes.exterieur}`
-                : 'Analyste Football & Value Bets'}
+              {contextAttached && activeMatch
+                ? `${activeMatch.equipes.domicile} · ${activeMatch.equipes.exterieur}`
+                : 'Bonjour, je suis Apex IA'}
             </p>
             <p className="apex-chat-empty__text">
-              {activeMatch
-                ? 'Toutes les statistiques Poisson, buts attendus, cotes et bonus de cette fiche sont chargés.'
-                : 'Posez une question sur l’écran affiché, un match, une cote bookmaker ou la tactique football.'}
+              {contextAttached && activeMatch
+                ? 'Les statistiques, xG et cotes de cette fiche sont disponibles si vous souhaitez en discuter.'
+                : 'Posez n’importe quelle question sur un match, les cotes, la tactique ou simplement pour échanger.'}
             </p>
             <div className="apex-chat-prompts">
               {quickPrompts.map(q => (
@@ -147,13 +232,17 @@ export default function ChatComposer() {
                 <span>{msg.role === 'user' ? 'Vous' : msg.meta || 'Apex IA'}</span>
                 <span>{msg.timestamp}</span>
               </div>
-              {msg.role === 'assistant' ? <FormattedReply text={msg.text} /> : <p className="apex-chat-bubble__p">{msg.text}</p>}
+              {msg.role === 'assistant' ? (
+                <FormattedReply text={msg.text} streaming={streamingId === msg.id} />
+              ) : (
+                <p className="apex-chat-bubble__p">{msg.text}</p>
+              )}
             </div>
           ))
         )}
 
-        {sending && (
-          <div className="apex-chat-typing" aria-label="Apex IA rédige sa réponse">
+        {sending && !streamingId && (
+          <div className="apex-chat-typing" aria-label="Apex IA prépare sa réponse">
             <span />
             <span />
             <span />
@@ -190,21 +279,33 @@ export default function ChatComposer() {
             placeholder={
               creditsLeft <= 0
                 ? 'Crédits temporairement épuisés…'
-                : activeMatch
-                  ? `Question sur ${activeMatch.equipes.domicile} · ${activeMatch.equipes.exterieur}…`
-                  : 'Votre question foot, cotes ou stats…'
+                : contextAttached && activeMatch
+                  ? `Écrire à propos de ${activeMatch.equipes.domicile} · ${activeMatch.equipes.exterieur}…`
+                  : 'Écrire un message à Apex IA…'
             }
             disabled={creditsLeft <= 0}
-            aria-label="Poser une question à Apex IA"
+            aria-label="Écrire un message à Apex IA"
           />
-          <button
-            type="submit"
-            className="apex-chat-composer__send"
-            disabled={sending || !draft.trim() || creditsLeft <= 0}
-            aria-label="Envoyer"
-          >
-            <Icon name="arrow" size={18} />
-          </button>
+          {sending ? (
+            <button
+              type="button"
+              className="apex-chat-composer__stop"
+              onClick={stopGenerating}
+              title="Arrêter la réponse"
+              aria-label="Arrêter la réponse"
+            >
+              <span className="apex-chat-composer__stop-sq" aria-hidden="true" />
+            </button>
+          ) : (
+            <button
+              type="submit"
+              className="apex-chat-composer__send"
+              disabled={!draft.trim() || creditsLeft <= 0}
+              aria-label="Envoyer"
+            >
+              <Icon name="arrow" size={18} />
+            </button>
+          )}
         </div>
       </form>
     </div>

@@ -88,7 +88,7 @@ function Routes(): ReactNode {
 
 function Shell() {
   const { path, navigate } = useRouter()
-  const { setActiveMatch } = useAiChat()
+  const { setActiveMatch, setScreenContext } = useAiChat()
   const principal = useRef<HTMLElement>(null)
   const premier = useRef(true)
   const [rechercheOuverte, setRechercheOuverte] = useState(false)
@@ -96,6 +96,9 @@ function Shell() {
 
   useEffect(() => {
     if (!path.startsWith('/match/')) setActiveMatch(null)
+    if (path !== '/' && path !== '/matchs' && path !== '/actualites' && path !== '/historique') {
+      setScreenContext(null)
+    }
     document.title = (TITRES[path] ?? 'Apex') + ' · Apex'
     if (premier.current) {
       premier.current = false
@@ -103,7 +106,7 @@ function Shell() {
     }
     // Après un changement de page, le lecteur d'écran et le clavier repartent du contenu.
     principal.current?.focus({ preventScroll: true })
-  }, [path, setActiveMatch])
+  }, [path, setActiveMatch, setScreenContext])
 
   return (
     <div className="app">

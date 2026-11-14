@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type { Prediction } from '../domain/contracts'
 import { heureCourte } from './format'
@@ -105,21 +105,31 @@ function mapMatchPayload(m: Prediction) {
   }
 }
 
+type SseEvent =
+  | { type: 'start'; model?: string }
+  | { type: 'delta'; text?: string }
+  | { type: 'done'; model?: string; text?: string }
+  | { type: 'error'; error?: string }
+
 interface AiChatContextValue {
   isOpen: boolean
   activeMatch: Prediction | null
   screenContext: ScreenContext | null
+  contextAttached: boolean
   messages: ChatMessage[]
   sending: boolean
+  streamingId: string | null
   error: string | null
   creditsLeft: number
   maxCredits: number
-  open: (opts?: { match?: Prediction | null; prompt?: string }) => void
+  open: (opts?: { match?: Prediction | null; prefill?: string }) => void
   close: () => void
   toggle: () => void
   setActiveMatch: (m: Prediction | null) => void
   setScreenContext: (ctx: ScreenContext | null) => void
+  setContextAttached: (enabled: boolean) => void
   sendMessage: (prompt: string, tab?: string) => Promise<void>
+  stopGenerating: () => void
   resetConversation: () => void
 }
 
@@ -127,8 +137,10 @@ const AiChatContext = createContext<AiChatContextValue>({
   isOpen: false,
   activeMatch: null,
   screenContext: null,
+  contextAttached: true,
   messages: [],
   sending: false,
+  streamingId: null,
   error: null,
   creditsLeft: MAX_CREDITS,
   maxCredits: MAX_CREDITS,
@@ -137,18 +149,28 @@ const AiChatContext = createContext<AiChatContextValue>({
   toggle: () => undefined,
   setActiveMatch: () => undefined,
   setScreenContext: () => undefined,
+  setContextAttached: () => undefined,
   sendMessage: async () => undefined,
+  stopGenerating: () => undefined,
   resetConversation: () => undefined,
 })
 
 export function AiChatProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false)
-  const [activeMatch, setActiveMatch] = useState<Prediction | null>(null)
+  const [activeMatch, setActiveMatchState] = useState<Prediction | null>(null)
   const [screenContext, setScreenContext] = useState<ScreenContext | null>(null)
-  const [messages, setMessages] = useState<ChatMessage[]>(readMessages)
+  const [contextAttached, setContextAttached] = useState(true)
+  const [messages, setMessages] = useState<ChatMessage[]>(() => readMessages())
   const [sending, setSending] = useState(false)
+  const [streamingId, setStreamingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [credits, setCredits] = useState<CreditState>(readCredits)
+  const [credits, setCredits] = useState<CreditState>(() => readCredits())
+  const abortRef = useRef<AbortController | null>(null)
+
+  const setActiveMatch = useCallback((m: Prediction | null) => {
+    setActiveMatchState(m)
+    if (m) setContextAttached(true)
+  }, [])
 
   useEffect(() => {
     writeMessages(messages)
@@ -156,8 +178,15 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
 
   const creditsLeft = Math.max(0, MAX_CREDITS - credits.used)
 
+  const stopGenerating = useCallback(() => {
+    if (abortRef.current) {
+      abortRef.current.abort()
+      abortRef.current = null
+    }
+  }, [])
+
   const sendMessage = useCallback(
-    async (rawPrompt: string, tab = 'Général') => {
+    async (rawPrompt: string, tab = 'Libre') => {
       const prompt = rawPrompt.trim()
       if (!prompt || sending) return
       const freshCredits = readCredits()
@@ -174,35 +203,124 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
         text: prompt,
         timestamp: nowTime,
       }
-      const nextHistory = [...messages, userMsg]
-      setMessages(nextHistory)
+      const priorHistory = messages.slice(-10).map(m => ({ role: m.role, text: m.text }))
+      setMessages([...messages, userMsg])
       setSending(true)
+      setStreamingId(null)
       setError(null)
+
+      const controller = new AbortController()
+      abortRef.current = controller
+
+      const assistantId = `a-${Date.now()}`
+      const metaLabel = contextAttached && activeMatch
+        ? `${activeMatch.equipes.domicile} · ${activeMatch.equipes.exterieur}`
+        : 'Apex IA'
+      const aiTimestamp = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+      let accumulated = ''
+
+      const upsertAssistant = (text: string) => {
+        setMessages(prev => {
+          const idx = prev.findIndex(m => m.id === assistantId)
+          const updated: ChatMessage = {
+            id: assistantId,
+            role: 'assistant',
+            text,
+            meta: metaLabel,
+            timestamp: aiTimestamp,
+          }
+          if (idx === -1) return [...prev, updated]
+          const copy = prev.slice()
+          copy[idx] = updated
+          return copy
+        })
+      }
 
       try {
         const res = await fetch('/api/chat', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'text/event-stream, application/json',
+          },
+          signal: controller.signal,
           body: JSON.stringify({
             prompt,
             tab,
-            history: messages.slice(-8).map(m => ({ role: m.role, text: m.text })),
-            match: activeMatch ? mapMatchPayload(activeMatch) : undefined,
-            screenContext: screenContext ?? undefined,
+            stream: true,
+            history: priorHistory,
+            match: contextAttached && activeMatch ? mapMatchPayload(activeMatch) : undefined,
+            screenContext: contextAttached && screenContext ? screenContext : undefined,
           }),
         })
-        const data = (await res.json().catch(() => ({}))) as {
-          error?: string
-          model?: string
-          sections?: Array<{ label?: string; sub?: string; body?: string }>
-        }
+
+        const contentType = res.headers.get('content-type') || ''
+
         if (!res.ok) {
-          throw new Error(data.error || 'Le serveur IA ne répond pas pour le moment.')
+          const errData = (await res.json().catch(() => ({}))) as { error?: string }
+          throw new Error(errData.error || 'Le serveur IA ne répond pas pour le moment.')
         }
-        const replyText = data.sections?.[0]?.body?.trim()
-        if (!replyText) {
+
+        if (contentType.includes('text/event-stream') && res.body) {
+          const reader = res.body.getReader()
+          const decoder = new TextDecoder()
+          let buffer = ''
+
+          const handleLine = (rawLine: string) => {
+            const line = rawLine.trim()
+            if (!line.startsWith('data:')) return
+            const jsonStr = line.slice(5).trim()
+            if (!jsonStr) return
+            let ev: SseEvent
+            try {
+              ev = JSON.parse(jsonStr) as SseEvent
+            } catch {
+              return
+            }
+            if (ev.type === 'start') {
+              setStreamingId(assistantId)
+            } else if (ev.type === 'delta' && ev.text) {
+              accumulated += ev.text
+              setStreamingId(assistantId)
+              upsertAssistant(accumulated)
+            } else if (ev.type === 'done' && ev.text) {
+              accumulated = ev.text
+              upsertAssistant(accumulated)
+            } else if (ev.type === 'error' && !accumulated.trim()) {
+              throw new Error(ev.error || 'Erreur pendant la génération de la réponse.')
+            }
+          }
+
+          while (true) {
+            const { done, value } = await reader.read()
+            if (value) {
+              buffer += decoder.decode(value, { stream: true })
+              const lines = buffer.split(/\r?\n/)
+              buffer = lines.pop() ?? ''
+              for (const line of lines) handleLine(line)
+            }
+            if (done) break
+          }
+          const rest = decoder.decode()
+          if (rest) buffer += rest
+          for (const line of buffer.split(/\r?\n/)) handleLine(line)
+        } else {
+          const data = (await res.json().catch(() => ({}))) as {
+            error?: string
+            reply?: string
+            sections?: Array<{ label?: string; sub?: string; body?: string }>
+          }
+          const replyText = (data.reply || data.sections?.[0]?.body || '').trim()
+          if (!replyText) throw new Error(data.error || 'Réponse vide reçue du modèle IA.')
+          accumulated = replyText
+          upsertAssistant(accumulated)
+        }
+
+        const finalReply = accumulated.trim()
+        if (!finalReply) {
           throw new Error('Réponse vide reçue du modèle IA.')
         }
+        upsertAssistant(finalReply)
 
         const updatedCredits: CreditState = {
           used: freshCredits.used + 1,
@@ -210,51 +328,63 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
         }
         writeCredits(updatedCredits)
         setCredits(updatedCredits)
-
-        const aiMsg: ChatMessage = {
-          id: `a-${Date.now()}`,
-          role: 'assistant',
-          text: replyText,
-          meta: activeMatch
-            ? `${activeMatch.equipes.domicile} · ${activeMatch.equipes.exterieur}`
-            : data.sections?.[0]?.sub || 'Apex IA',
-          timestamp: new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-        }
-        setMessages(prev => [...prev, aiMsg])
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erreur de communication avec Apex IA.')
+        const aborted = controller.signal.aborted || (err instanceof DOMException && err.name === 'AbortError')
+        if (aborted) {
+          if (accumulated.trim()) {
+            upsertAssistant(accumulated.trim())
+            const updatedCredits: CreditState = {
+              used: freshCredits.used + 1,
+              resetAt: freshCredits.resetAt,
+            }
+            writeCredits(updatedCredits)
+            setCredits(updatedCredits)
+          }
+        } else {
+          setError(err instanceof Error ? err.message : 'Erreur de communication avec Apex IA.')
+        }
       } finally {
+        if (abortRef.current === controller) abortRef.current = null
         setSending(false)
+        setStreamingId(null)
       }
     },
-    [activeMatch, messages, screenContext, sending],
+    [activeMatch, contextAttached, messages, screenContext, sending],
   )
 
   const open = useCallback(
-    (opts?: { match?: Prediction | null; prompt?: string }) => {
-      if (opts?.match !== undefined) setActiveMatch(opts.match)
+    (opts?: { match?: Prediction | null; prefill?: string }) => {
+      if (opts?.match !== undefined) {
+        setActiveMatch(opts.match)
+        if (opts.match) setContextAttached(true)
+      }
       setIsOpen(true)
-      if (opts?.prompt) {
-        void sendMessage(opts.prompt)
+      if (opts?.prefill) {
+        void sendMessage(opts.prefill, 'Libre')
       }
     },
-    [sendMessage],
+    [sendMessage, setActiveMatch],
   )
 
   const close = useCallback(() => setIsOpen(false), [])
   const toggle = useCallback(() => setIsOpen(o => !o), [])
   const resetConversation = useCallback(() => {
+    stopGenerating()
     setMessages([])
+    setStreamingId(null)
+    setSending(false)
     setError(null)
-  }, [])
+  }, [stopGenerating])
 
   const value = useMemo<AiChatContextValue>(
     () => ({
       isOpen,
       activeMatch,
       screenContext,
+      contextAttached,
       messages,
       sending,
+      streamingId,
       error,
       creditsLeft,
       maxCredits: MAX_CREDITS,
@@ -263,10 +393,29 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       toggle,
       setActiveMatch,
       setScreenContext,
+      setContextAttached,
       sendMessage,
+      stopGenerating,
       resetConversation,
     }),
-    [activeMatch, close, creditsLeft, error, isOpen, messages, open, resetConversation, screenContext, sendMessage, sending, toggle],
+    [
+      activeMatch,
+      close,
+      contextAttached,
+      creditsLeft,
+      error,
+      isOpen,
+      messages,
+      open,
+      resetConversation,
+      screenContext,
+      sendMessage,
+      sending,
+      setActiveMatch,
+      stopGenerating,
+      streamingId,
+      toggle,
+    ],
   )
 
   return <AiChatContext.Provider value={value}>{children}</AiChatContext.Provider>
