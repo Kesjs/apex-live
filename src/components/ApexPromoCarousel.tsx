@@ -121,7 +121,7 @@ export default function ApexPromoCarousel({
         <div className="apxPromo__logo" aria-label={PARTNER.name}>
           1X<span>BET</span>
         </div>
-        <span className="apxPromo__adLabel">Publicité</span>
+        <span className="apxPromo__adLabel">Sponsorisé · 18+</span>
       </header>
       <div className="apxPromo__message" key={active} aria-live="off">
         <h3>{slides[active].title}</h3>

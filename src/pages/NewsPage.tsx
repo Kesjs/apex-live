@@ -3,6 +3,7 @@ import type { NewsArticle } from '../domain/contracts'
 import { provider } from '../data'
 import { Icon } from '../components/Icon'
 import { PageHeader } from '../components/PageHeader'
+import { PartnerStrip } from '../components/PartnerStrip'
 import { Chip, Disclaimer, EmptyState, ErrorState } from '../components/ui'
 import { useAiChat } from '../lib/ai-chat'
 import { useAsync } from '../lib/useAsync'
@@ -53,6 +54,12 @@ export default function NewsPage() {
   const [etat, reessayer] = useAsync(() => provider.getNews(filtre.value), [filtre.value])
   const articles = useMemo(() => (etat.status === 'ready' ? etat.data : []), [etat])
   const vedette = articles[0]
+  const promoBanner = (
+    <PartnerStrip
+      variant="banner"
+      contextHint="Suivez l’actu foot en direct et activez votre code promo kenken sur 1xBet."
+    />
+  )
 
   useEffect(() => {
     setScreenContext({
@@ -86,17 +93,25 @@ export default function NewsPage() {
           <p>Nous récupérons les dépêches en direct.</p>
         </div>
       )}
-      {etat.status === 'error' && <ErrorState message={etat.error.message} onRetry={reessayer} />}
+      {etat.status === 'error' && (
+        <>
+          {promoBanner}
+          <ErrorState message={etat.error.message} onRetry={reessayer} />
+        </>
+      )}
       {etat.status === 'ready' && articles.length === 0 && (
-        <EmptyState
-          titre="Aucune actualité disponible"
-          texte="Les dépêches apparaîtront après la prochaine synchronisation."
-          action={
-            <button type="button" className="btn btn-secondary" onClick={reessayer}>
-              Actualiser
-            </button>
-          }
-        />
+        <>
+          {promoBanner}
+          <EmptyState
+            titre="Aucune actualité disponible"
+            texte="Les dépêches apparaîtront après la prochaine synchronisation."
+            action={
+              <button type="button" className="btn btn-secondary" onClick={reessayer}>
+                Actualiser
+              </button>
+            }
+          />
+        </>
       )}
       {etat.status === 'ready' && vedette && (
         <>
@@ -113,6 +128,7 @@ export default function NewsPage() {
               </a>
             </div>
           </section>
+          {promoBanner}
           <section aria-labelledby="dernieres-actus">
             <div className="section-title">
               <h2 id="dernieres-actus">Dernières actualités ({articles.length - 1})</h2>

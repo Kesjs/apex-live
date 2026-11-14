@@ -141,16 +141,14 @@ export default function MatchesPage() {
         </div>
       )}
 
-      {fiches.length > 0 && (
-        <PartnerStrip
-          variant="banner"
-          contextHint={
-            nbValues > 0
-              ? `${nbValues} opportunité${nbValues > 1 ? 's' : ''} Value Bet repérée${nbValues > 1 ? 's' : ''} aujourd’hui · code promo kenken.`
-              : undefined
-          }
-        />
-      )}
+      <PartnerStrip
+        variant="banner"
+        contextHint={
+          nbValues > 0
+            ? `${nbValues} opportunité${nbValues > 1 ? 's' : ''} Value Bet repérée${nbValues > 1 ? 's' : ''} aujourd’hui · code promo kenken.`
+            : undefined
+        }
+      />
 
       {etat.status === 'loading' && <ListSkeleton lignes={5} />}
       {etat.status === 'error' && <ErrorState message={etat.error.message} onRetry={reessayer} />}

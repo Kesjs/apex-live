@@ -8,7 +8,7 @@ import { Icon } from '../components/Icon'
 import { FiltrePiliers, MatchRow } from '../components/MatchRow'
 import type { Filtre } from '../components/MatchRow'
 import { PageHeader } from '../components/PageHeader'
-import { PartnerStrip } from '../components/PartnerStrip'
+import ApexPromoCarousel from '../components/ApexPromoCarousel'
 import { FeaturedSkeleton, ListSkeleton } from '../components/Skeletons'
 import { Chip, Disclaimer, ErrorState, SectionTitle } from '../components/ui'
 import { useAiChat } from '../lib/ai-chat'
@@ -362,7 +362,7 @@ export default function HomePage() {
             </section>
           )}
           <HomeNewsSidebar />
-          <PartnerStrip variant="banner" />
+          <ApexPromoCarousel />
         </aside>
       </div>
 

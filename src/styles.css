@@ -258,97 +258,268 @@ main {
   animation: page-in 0.4s var(--ease) both;
 }
 
-/* Partenaire compact (sidebar, Matchs, Fiche) */
-.partner-strip {
+/* Bannières publicitaires photographiques partenaire (Sidebar, Accueil, Matchs, Actualités) */
+.partner-ad {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 16px;
+  color: #ffffff;
+  background: #061c2e;
+  box-shadow: 0 8px 20px rgba(5, 22, 34, 0.14);
+}
+
+.partner-ad__bg {
+  position: absolute;
+  top: -16%;
+  left: -4%;
+  width: 108%;
+  height: 124%;
+  background-size: cover;
+  background-position: center bottom;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.partner-ad__scrim {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(96deg, rgba(5, 20, 34, 0.96) 0%, rgba(6, 30, 42, 0.86) 52%, rgba(5, 22, 34, 0.36) 100%);
+}
+
+.partner-ad--sidebar {
+  margin-top: auto;
+  padding: 14px;
+}
+
+.partner-ad--sidebar .partner-ad__scrim {
+  background: linear-gradient(165deg, rgba(5, 20, 34, 0.9) 0%, rgba(6, 32, 42, 0.86) 100%);
+}
+
+.partner-ad--banner {
+  padding: 18px 20px;
+}
+
+.partner-ad__content {
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 12px 13px;
-  border-radius: 14px;
-  border: 1px solid var(--acl);
-  background: linear-gradient(155deg, rgba(4, 120, 87, 0.06), rgba(4, 120, 87, 0.02));
+  gap: 12px;
 }
-.partner-strip--sidebar {
-  margin-top: auto;
-}
-.partner-strip__head {
-  display: flex;
+
+.partner-ad--banner .partner-ad__content {
+  flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  font-size: 12px;
-  color: var(--tx);
-}
-.partner-strip__brand strong {
-  color: var(--ac);
-}
-.partner-strip__tag {
-  padding: 2px 6px;
-  border-radius: 999px;
-  background: var(--s1);
-  border: 1px solid var(--ln);
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--mu);
-}
-.partner-strip__copy {
-  font-size: 12px;
-  line-height: 1.45;
-  color: var(--mu);
-  max-width: 62ch;
-}
-.partner-strip__actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   flex-wrap: wrap;
+  gap: 16px;
 }
-.partner-strip__btn {
-  flex: 1;
-  min-height: 36px;
-  display: inline-flex;
+
+.partner-ad__info {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.partner-ad__top {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding: 6px 10px;
-  border-radius: 10px;
-  border: 1px solid var(--acl);
-  background: var(--s1);
-  color: var(--tx);
-  font: inherit;
-  cursor: pointer;
+  margin-bottom: 6px;
 }
-.partner-strip__btn:hover {
-  border-color: var(--ac);
+
+.partner-ad--banner .partner-ad__top {
+  justify-content: flex-start;
+  gap: 10px;
 }
-.partner-strip__code {
-  font-family: var(--display);
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--ac);
+
+.partner-ad__logo {
+  font-size: 19px;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -0.025em;
+  line-height: 1;
+  color: #f8fafc;
 }
-.partner-strip__action {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+
+.partner-ad--sidebar .partner-ad__logo {
+  font-size: 16px;
+}
+
+.partner-ad__logo span {
+  color: #38bdf8;
+}
+
+.partner-ad__badge {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   font-size: 11.5px;
   font-weight: 700;
-  color: var(--tx);
+  color: #f0fdf4;
+  white-space: nowrap;
 }
-.partner-strip__link {
+
+.partner-ad__headline {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+.partner-ad--sidebar .partner-ad__headline {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.partner-ad__sub {
+  margin: 5px 0 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #d6ebe5;
+  max-width: 52ch;
+}
+
+.partner-ad__ticket-group {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.partner-ad--sidebar .partner-ad__ticket-group {
+  width: 100%;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.partner-ad__ticket {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 10px;
+  border: 1px dashed rgba(103, 239, 177, 0.65);
+  background: rgba(6, 26, 38, 0.72);
+}
+
+.partner-ad--sidebar .partner-ad__ticket {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+}
+
+.partner-ad__ticket-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #a7f3d0;
+}
+
+.partner-ad__ticket-code {
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  color: #ffffff;
+  user-select: all;
+}
+
+.partner-ad--sidebar .partner-ad__ticket-code {
+  font-size: 14px;
+}
+
+.partner-ad__copy {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 36px;
-  padding: 0 12px;
+  gap: 6px;
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 0;
   border-radius: 10px;
-  background: var(--ac);
-  color: #fff;
-  font-size: 12px;
+  background: #047857;
+  color: #ffffff;
+  font: inherit;
+  font-size: 13px;
   font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0, 46, 33, 0.35);
+  transition: background 0.18s ease, transform 0.15s ease;
 }
-.partner-strip__link:hover {
-  background: var(--ac2);
+
+.partner-ad--sidebar .partner-ad__copy {
+  min-height: 34px;
+  padding: 6px 12px;
+  font-size: 12.5px;
+  width: 100%;
+}
+
+.partner-ad__copy:hover {
+  background: #065f46;
+}
+
+.partner-ad__copy:active {
+  transform: scale(0.97);
+}
+
+.partner-ad__visit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 38px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #062b22;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.partner-ad__visit:hover {
+  background: #ecfdf5;
+}
+
+.partner-ad__error {
+  position: relative;
+  z-index: 2;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #fecaca;
+}
+
+@media (max-width: 639px) {
+  .partner-ad--banner {
+    padding: 15px 16px;
+  }
+  .partner-ad--banner .partner-ad__content {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .partner-ad__info {
+    flex: none;
+  }
+  .partner-ad__headline {
+    font-size: 16px;
+  }
+  .partner-ad__ticket-group {
+    width: 100%;
+  }
+  .partner-ad__ticket {
+    flex: 1;
+  }
 }
 
 /* Radar Value Bets & bannière trêve internationale */
