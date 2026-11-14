@@ -50,3 +50,10 @@ export function lesPlusSurs(fiches: Prediction[], n = 3): Prediction[] {
     .sort((a, b) => (b.pronostics?.buts.probabilite ?? 0) - (a.pronostics?.buts.probabilite ?? 0))
     .slice(0, n)
 }
+
+/** Rencontres présentant un écart positif détecté entre modèle Apex et cote bookmaker. */
+export function valueBets(fiches: Prediction[]): Prediction[] {
+  return fiches
+    .filter(f => f.pronostics !== null && f.value != null && f.value.ecart > 0)
+    .sort((a, b) => (b.value?.ecart ?? 0) - (a.value?.ecart ?? 0))
+}

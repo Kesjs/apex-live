@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { provider } from '../data'
 import type { PeriodeHistorique, PilierId } from '../domain/contracts'
 import { Crest } from '../components/Crest'
@@ -6,6 +6,7 @@ import { PageHeader } from '../components/PageHeader'
 import { ResultMark } from '../components/ResultMark'
 import { ListSkeleton } from '../components/Skeletons'
 import { Compteur, Disclaimer, EmptyState, ErrorState, ProbBar, SectionTitle } from '../components/ui'
+import { useAiChat } from '../lib/ai-chat'
 import { pct, quandLabel } from '../lib/format'
 import { Link } from '../lib/router'
 import { useAsync } from '../lib/useAsync'
@@ -21,9 +22,21 @@ const NOMS: Record<PilierId, string> = { issue: 'Issue du match', buts: 'Nombre 
 const PAR_PAGE = 3
 
 export default function HistoryPage() {
+  const { setScreenContext } = useAiChat()
   const [periode, setPeriode] = useState<PeriodeHistorique>('30j')
   const [visibles, setVisibles] = useState(PAR_PAGE)
   const [etat, reessayer] = useAsync(() => provider.getHistory(periode), [periode])
+
+  useEffect(() => {
+    if (etat.status !== 'ready') return
+    const ti = etat.data.taux.issue
+    const tb = etat.data.taux.buts
+    setScreenContext({
+      route: '/historique',
+      pageTitle: `Historique · ${periode}`,
+      historySummary: `Période ${periode} : Issue ${ti.reussis}/${ti.total} (${ti.total ? Math.round((ti.reussis / ti.total) * 100) : 0}%), Buts ${tb.reussis}/${tb.total} (${tb.total ? Math.round((tb.reussis / tb.total) * 100) : 0}%).`,
+    })
+  }, [etat, periode, setScreenContext])
 
   const changer = (p: PeriodeHistorique) => {
     setPeriode(p)
@@ -64,7 +77,7 @@ export default function HistoryPage() {
                     </div>
                     <div className="taux-bar">
                       <ProbBar valeur={ratio} ton={ton} delai={i * 100} />
-                      <span className={'tn taux-pct ' + (ton === 'am' ? 'amber' : 'accent')}>{t.total > 0 ? <Compteur valeur={ratio} delai={i * 100} /> : '—'}</span>
+                      <span className={'tn taux-pct ' + (ton === 'am' ? 'amber' : 'accent')}>{t.total > 0 ? <Compteur valeur={ratio} delai={i * 100} /> : '–'}</span>
                     </div>
                   </div>
                 )
@@ -101,7 +114,7 @@ export default function HistoryPage() {
                     <div className="stat-row stat-head"><span>Annoncé</span><span>Pronostic</span><span>Réel</span></div>
                     {lignes}
                   </div>
-                  <p className="muted small">Si « annoncé » est nettement au-dessus de « réel », le modèle est trop optimiste. Calculé sur les matchs de la période.</p>
+                  <p className="muted small" style={{ padding: '10px 14px 12px', borderTop: '1px solid var(--ln)' }}>Si « annoncé » est nettement au-dessus de « réel », le modèle est trop optimiste. Calculé sur les matchs de la période.</p>
                 </div>
               </section>
             )
@@ -118,8 +131,8 @@ export default function HistoryPage() {
                     <Link key={f.match_id} to={'/match/' + f.match_id} className="hrow press">
                       <span className="hrow-top">
                         <span className="hrow-teams">
-                          <Crest nom={f.equipes.domicile} taille="sm" />
-                          {f.equipes.domicile} — {f.equipes.exterieur}
+                          <Crest nom={f.equipes.domicile} logoUrl={f.logos?.domicile} taille="sm" />
+                          {f.equipes.domicile} · {f.equipes.exterieur}
                         </span>
                         <span className="hrow-score tn">{f.resultat.score_final ?? '–'}</span>
                       </span>

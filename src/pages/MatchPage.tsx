@@ -14,6 +14,7 @@ import { DetailSkeleton } from '../components/Skeletons'
 import { StatsComparees } from '../components/StatsComparees'
 import { Chip, Disclaimer, EmptyState, ErrorState, SectionTitle } from '../components/ui'
 import { useFavoris } from '../lib/favoris'
+import { useAiChat } from '../lib/ai-chat'
 import { heureCourte } from '../lib/format'
 import { matchStatus } from '../lib/match-status'
 import { Link, useRouter } from '../lib/router'
@@ -43,15 +44,17 @@ function Resultat({ fiche }: { fiche: Prediction }) {
 
 function Fiche({ fiche, retour, actualiser, enCours, erreur }: { fiche: Prediction; retour: string; actualiser: () => void; enCours: boolean; erreur: string | null }) {
   const { estFavori, basculer } = useFavoris()
+  const { setActiveMatch, open: openAi } = useAiChat()
   const [onglet, setOnglet] = useState<Tab>('resume')
   const [now, setNow] = useState(Date.now)
   const status = matchStatus(fiche, now)
   const p = fiche.pronostics
   useEffect(() => {
-    document.title = fiche.equipes.domicile + ' – ' + fiche.equipes.exterieur + ' · Apex'
+    setActiveMatch(fiche)
+    document.title = fiche.equipes.domicile + ' · ' + fiche.equipes.exterieur + ' · Apex'
     const timer = window.setInterval(() => setNow(Date.now()), 30_000)
     return () => window.clearInterval(timer)
-  }, [fiche])
+  }, [fiche, setActiveMatch])
   return <div className="page-body match-page">
     <header className="match-header card">
       <div className="topbar">
@@ -64,7 +67,7 @@ function Fiche({ fiche, retour, actualiser, enCours, erreur }: { fiche: Predicti
         <div className="match-hero-mid"><p className="match-hero-time tn">{status.score ?? heureCourte(fiche.date_heure)}</p><Chip ton={status.final || status.live ? 'ac' : 'muet'}>{status.label}</Chip></div>
         <div className="featured-team"><Crest nom={fiche.equipes.exterieur} logoUrl={fiche.logos?.exterieur} taille="xl" /><h1>{fiche.equipes.exterieur}</h1></div>
       </section>
-      <div className="match-freshness"><span>{status.label === 'À venir' ? <KickoffCountdown iso={fiche.date_heure} /> : status.final ? 'Score confirmé par ' + fiche.meta.source_stats : status.live ? 'En direct — score en attente de confirmation' : 'En attente de confirmation par la source'}</span><button type="button" className="refresh-match" disabled={enCours} onClick={actualiser}>{enCours ? 'Actualisation…' : 'Actualiser'}</button></div>
+      <div className="match-freshness"><span>{status.label === 'À venir' ? <KickoffCountdown iso={fiche.date_heure} /> : status.final ? 'Score confirmé par ' + fiche.meta.source_stats : status.live ? 'En direct · score en attente de confirmation' : 'En attente de confirmation par la source'}</span><button type="button" className="refresh-match" disabled={enCours} onClick={actualiser}>{enCours ? 'Actualisation…' : 'Actualiser'}</button></div>
       {fiche.resultat.mis_a_jour_le && <p className="muted small center">Résultat actualisé le {dateMatch(fiche.resultat.mis_a_jour_le)}</p>}
       {erreur && <p role="status" className="refresh-error">{erreur} Les dernières données chargées restent affichées.</p>}
     </header>
@@ -75,12 +78,14 @@ function Fiche({ fiche, retour, actualiser, enCours, erreur }: { fiche: Predicti
           {status.label !== 'À venir' && <Resultat fiche={fiche} />}
           <FaitsDuMatch fiche={fiche} />
           {fiche.stats && <StatsComparees fiche={fiche} />}
-          <section className="card match-coverage"><h2>Compositions et événements</h2><p className="muted small">Les compositions, buteurs, minutes de jeu et statistiques en direct ne sont pas disponibles dans la source actuelle. Ils seront affichés uniquement avec des données confirmées.</p></section>
-          {p && <button className="btn btn-secondary" type="button" onClick={() => setOnglet('analyse')}>{status.final ? 'Voir l’analyse publiée avant le match' : 'Comprendre les pronostics Apex'}<Icon name="chevron" size={16} /></button>}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            {p && <button className="btn btn-secondary" type="button" onClick={() => setOnglet('analyse')}>{status.final ? 'Voir l’analyse publiée avant le match' : 'Comprendre les pronostics Apex'}<Icon name="chevron" size={16} /></button>}
+            <button className="btn btn-primary" type="button" onClick={() => openAi({ match: fiche })}><Icon name="sparkle" size={16} /> Analyser avec Apex IA</button>
+          </div>
         </>}
         {onglet === 'stats' && <>
           {fiche.stats ? <><StatsComparees fiche={fiche} /><PlusMoins fiche={fiche} /></> : <section className="card state"><h2>Statistiques indisponibles</h2><p>Aucune statistique détaillée n’est disponible pour cette rencontre.</p></section>}
-          <section className="card match-coverage"><h2>Périmètre des données</h2><p className="muted small">Ces chiffres décrivent les rencontres précédant le coup d’envoi. Ils ne représentent pas la possession, les tirs ou les événements de ce match. Source : {fiche.meta.source_stats}.</p></section>
+          <section className="card match-coverage"><h2>Périmètre des données</h2><p className="muted small">Ces chiffres décrivent les rencontres précédant le coup d’envoi. Source : {fiche.meta.source_stats}{fiche.meta.source_cotes ? ` · Cotes : ${fiche.meta.source_cotes}` : ''}.</p></section>
         </>}
         {onglet === 'analyse' && <>
           <div className="analysis-notice"><Icon name="info" size={18} /><p>{status.final ? 'Analyse d’avant-match conservée pour comparer les prévisions au résultat réel.' : 'Estimations d’avant-match : les probabilités ne garantissent aucun résultat.'}</p></div>
@@ -93,7 +98,6 @@ function Fiche({ fiche, retour, actualiser, enCours, erreur }: { fiche: Predicti
       </div>
       <aside className="stack match-context" aria-label="Contexte du match">
         {fiche.forme && <section className="stack-sm"><SectionTitle id="forme">Forme avant le match</SectionTitle><FormStrip forme={fiche.forme} domicile={fiche.equipes.domicile} exterieur={fiche.equipes.exterieur} /></section>}
-        <section className="card match-coverage"><h2>Confrontations directes</h2><p className="muted small">L’historique des confrontations entre ces deux équipes n’est pas fourni dans cette fiche.</p></section>
         <section className="match-ad stack-sm" aria-label="Offre partenaire"><SectionTitle id="offre-partenaire" aside={<span className="muted small">Publicité</span>}>Partenaire</SectionTitle><ApexPromoCarousel /><p className="muted small">Contenu sponsorisé, indépendant de l’analyse Apex.</p></section>
       </aside>
     </div>

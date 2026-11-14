@@ -1,9 +1,16 @@
-import type { Prediction } from '../domain/contracts'
+import type { NiveauRisque, Prediction } from '../domain/contracts'
 import { heureCourte, quandLabel, jourDeFiche } from '../lib/format'
 import { Link } from '../lib/router'
 import { Crest } from './Crest'
 import { Icon } from './Icon'
 import { Chip, Risque } from './ui'
+
+function risqueDepuisProba(p?: number): NiveauRisque {
+  if (p === undefined) return 'moyen'
+  if (p >= 0.72) return 'faible'
+  if (p >= 0.5) return 'moyen'
+  return 'eleve'
+}
 
 /** Match vedette : les 4 pronostics en un coup d'œil. */
 export function FeaturedMatch({ fiche }: { fiche: Prediction }) {
@@ -41,14 +48,14 @@ export function FeaturedMatch({ fiche }: { fiche: Prediction }) {
           <p className="kicker">1 · Issue</p>
           <p className="tile-value">{p.issue.court ?? p.issue.selection}</p>
           <p className="tile-foot">
-            <Risque niveau="faible" />
+            <Risque niveau={risqueDepuisProba(p.issue.probabilite)} />
           </p>
         </div>
         <div className="tile">
           <p className="kicker">2 · Buts</p>
           <p className="tile-value">{p.buts.court ?? p.buts.selection}</p>
           <p className="tile-foot">
-            <Risque niveau="faible" />
+            <Risque niveau={risqueDepuisProba(p.buts.probabilite)} />
           </p>
         </div>
         <div className="tile">
@@ -64,7 +71,7 @@ export function FeaturedMatch({ fiche }: { fiche: Prediction }) {
         </div>
         <div className="tile">
           <p className="kicker">4 · Score</p>
-          <p className="tile-value tn">{p.scores[0]?.score ?? '—'}</p>
+          <p className="tile-value tn">{p.scores[0]?.score ?? '–'}</p>
           <p className="tile-foot">
             <Risque niveau="eleve" />
           </p>

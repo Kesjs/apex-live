@@ -1,9 +1,9 @@
-import type { CategorieBonus, Cotes } from '../types.ts'
+import type { CategorieBonus, Cotes, MatchPasse } from '../types.ts'
 
 /**
  * Complément gratuit : les fichiers CSV de football-data.co.uk (sans clé).
- * Ils apportent ce que football-data.org ne donne pas : cartons, corners, fautes (donc le Bonus)
- * et les cotes moyennes des bookmakers. Les noms d'équipes diffèrent d'une source à l'autre :
+ * Ils apportent ce que football-data.org ne donne pas : cartons, corners, fautes (donc le Bonus),
+ * les scores des matchs joués et les cotes moyennes des bookmakers. Les noms d'équipes diffèrent d'une source à l'autre :
  * on rapproche les deux par la date (±1 jour) et par le nom (voir `memeEquipe`).
  * Toute erreur de téléchargement est tolérée : l'app fonctionne alors sans Bonus ni cotes.
  */
@@ -15,6 +15,8 @@ export interface LigneCsv {
   date: string
   dom: string
   ext: string
+  butsDom?: number
+  butsExt?: number
   bonus?: Bonus
   cotes: Cotes
 }
@@ -133,6 +135,8 @@ const r2 = (n: number): number => Math.round(n * 100) / 100
 export function ligneDepuisCsv(r: Record<string, string>): LigneCsv | null {
   const date = dateIso(r.Date ?? '')
   if (!date || !r.HomeTeam || !r.AwayTeam) return null
+  const butsDom = nombre(r.FTHG)
+  const butsExt = nombre(r.FTAG)
   const bonus: Bonus = {}
   const cartons = somme(r, 'HY', 'AY', 'HR', 'AR') // jaunes + rouges, les deux équipes
   const corners = somme(r, 'HC', 'AC')
@@ -157,7 +161,14 @@ export function ligneDepuisCsv(r: Record<string, string>): LigneCsv | null {
   const under = cote(r, ['Avg<2.5', 'B365<2.5', 'P<2.5', 'Max<2.5'])
   if (over) cotes['O2.5'] = over
   if (under) cotes['U2.5'] = under
-  return { date, dom: r.HomeTeam, ext: r.AwayTeam, ...(Object.keys(bonus).length ? { bonus } : {}), cotes }
+  return {
+    date,
+    dom: r.HomeTeam,
+    ext: r.AwayTeam,
+    ...(butsDom !== null && butsExt !== null ? { butsDom, butsExt } : {}),
+    ...(Object.keys(bonus).length ? { bonus } : {}),
+    cotes,
+  }
 }
 
 const JOUR_MS = 86_400_000
@@ -184,6 +195,11 @@ export class StatsCsv {
 
   get aDesCotes(): boolean {
     return this.cotesTrouvees
+  }
+
+  /** Accès en lecture aux lignes CSV indexées par code division. */
+  get toutesDivisions(): ReadonlyMap<string, LigneCsv[]> {
+    return this.lignes
   }
 
   private async telecharger(url: string): Promise<string | null> {
@@ -223,6 +239,18 @@ export class StatsCsv {
     }
   }
 
+  /** Charge un seul championnat pour l'année de début de saison (utile en serverless). */
+  async chargerCompetition(competition: string, annee: number): Promise<void> {
+    const div = DIVISIONS[competition]
+    if (!div) return
+    const code = String(annee % 100).padStart(2, '0') + String((annee + 1) % 100).padStart(2, '0')
+    const cle = code + ':' + div
+    if (this.charges.has(cle)) return
+    this.charges.add(cle)
+    const texte = await this.telecharger(BASE + '/mmz4281/' + code + '/' + div + '.csv')
+    if (texte) this.ajouter(div, texte)
+  }
+
   /** Matchs à venir avec leurs cotes (fixtures.csv, plusieurs championnats dans le même fichier). */
   async chargerAVenir(): Promise<void> {
     if (this.aVenirCharge) return
@@ -252,6 +280,48 @@ export class StatsCsv {
 
   cotes(competition: string, date: string, dom: string, ext: string): Cotes {
     return this.trouver(competition, date, dom, ext).find(l => Object.keys(l.cotes).length)?.cotes ?? {}
+  }
+
+  /** Historique récent d'une équipe issu des CSV (toutes divisions chargées), strictement avant `avantJour`. */
+  matchsEquipe(nomEquipe: string, avantJour?: string, max = 8): MatchPasse[] {
+    const out: MatchPasse[] = []
+    for (const liste of this.lignes.values()) {
+      for (const l of liste) {
+        if (l.butsDom === undefined || l.butsExt === undefined) continue
+        if (avantJour && l.date >= avantJour) continue
+        if (memeEquipe(l.dom, nomEquipe)) {
+          out.push({
+            date: l.date,
+            domicile: true,
+            buts_pour: l.butsDom,
+            buts_contre: l.butsExt,
+            ...(l.bonus ? { bonus: l.bonus } : {}),
+          })
+        } else if (memeEquipe(l.ext, nomEquipe)) {
+          out.push({
+            date: l.date,
+            domicile: false,
+            buts_pour: l.butsExt,
+            buts_contre: l.butsDom,
+            ...(l.bonus ? { bonus: l.bonus } : {}),
+          })
+        }
+      }
+    }
+    return out.sort((a, b) => b.date.localeCompare(a.date)).slice(0, max)
+  }
+
+  /** Moyenne de buts domicile / extérieur d'une division CSV, antérieure à `avantJour`. */
+  moyennesButs(competition: string, avantJour?: string): { domicile: number; exterieur: number } | null {
+    const div = DIVISIONS[competition]
+    if (!div) return null
+    const base = (this.lignes.get(div) ?? []).filter(
+      l => l.butsDom !== undefined && l.butsExt !== undefined && (!avantJour || l.date < avantJour),
+    )
+    if (base.length < 15) return null
+    const dom = base.reduce((s, l) => s + (l.butsDom ?? 0), 0) / base.length
+    const ext = base.reduce((s, l) => s + (l.butsExt ?? 0), 0) / base.length
+    return { domicile: dom || 1.5, exterieur: ext || 1.2 }
   }
 
   /** Moyenne par match (les deux équipes ensemble) de chaque catégorie, sur les matchs antérieurs à `avantJour`. */

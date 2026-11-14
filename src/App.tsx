@@ -3,7 +3,6 @@ import type { ReactNode } from 'react'
 import { Icon, Logo } from './components/Icon'
 import type { IconName } from './components/Icon'
 import { EmptyState } from './components/ui'
-import { LaunchIntro } from './components/LaunchIntro'
 import HistoryPage from './pages/HistoryPage'
 import HomePage from './pages/HomePage'
 import MatchesPage from './pages/MatchesPage'
@@ -12,10 +11,12 @@ import SettingsPage from './pages/SettingsPage'
 import AuthPage from './pages/AuthPage'
 import WelcomePage from './pages/WelcomePage'
 import { AuthProvider, useAuth } from './lib/auth'
+import { AiChatProvider, useAiChat } from './lib/ai-chat'
 import { DayProvider } from './lib/day'
 import { PrefsProvider } from './lib/prefs'
 import { Link, RouterProvider, useRouter } from './lib/router'
 import { ApexAiTopBar } from './components/ApexAiTopBar'
+import { PartnerStrip } from './components/PartnerStrip'
 import NewsPage from './pages/NewsPage'
 import FavoritesPage from './pages/FavoritesPage'
 
@@ -86,14 +87,15 @@ function Routes(): ReactNode {
 }
 
 function Shell() {
-  const { path } = useRouter()
-  const { navigate } = useRouter()
+  const { path, navigate } = useRouter()
+  const { setActiveMatch } = useAiChat()
   const principal = useRef<HTMLElement>(null)
   const premier = useRef(true)
   const [rechercheOuverte, setRechercheOuverte] = useState(false)
   const [recherche, setRecherche] = useState('')
 
   useEffect(() => {
+    if (!path.startsWith('/match/')) setActiveMatch(null)
     document.title = (TITRES[path] ?? 'Apex') + ' · Apex'
     if (premier.current) {
       premier.current = false
@@ -101,7 +103,7 @@ function Shell() {
     }
     // Après un changement de page, le lecteur d'écran et le clavier repartent du contenu.
     principal.current?.focus({ preventScroll: true })
-  }, [path])
+  }, [path, setActiveMatch])
 
   return (
     <div className="app">
@@ -117,6 +119,7 @@ function Shell() {
           </span>
         </Link>
         <Navigation variante="sidebar" />
+        <PartnerStrip variant="sidebar" />
         <p className="sidebar-note">Pronostics informatifs calculés à partir de statistiques. Aucun résultat n'est garanti. Jouer comporte des risques.</p>
       </aside>
       <header className={'mobile-header' + (rechercheOuverte ? ' search-open' : '')}>
@@ -131,11 +134,11 @@ function Shell() {
         </form>
       </header>
       <main id="main" ref={principal} tabIndex={-1}>
-        <ApexAiTopBar />
         <div className="page" key={path}>
           <Routes />
         </div>
       </main>
+      <ApexAiTopBar />
       <Navigation variante="bottom" />
     </div>
   )
@@ -157,7 +160,9 @@ function Racine() {
   if (premiereVisite) return null
   return (
     <DayProvider>
-      <Shell />
+      <AiChatProvider>
+        <Shell />
+      </AiChatProvider>
     </DayProvider>
   )
 }
@@ -167,7 +172,7 @@ export default function App() {
     <PrefsProvider>
       <AuthProvider>
         <RouterProvider>
-          <LaunchIntro><Racine /></LaunchIntro>
+          <Racine />
         </RouterProvider>
       </AuthProvider>
     </PrefsProvider>

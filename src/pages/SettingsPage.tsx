@@ -71,14 +71,14 @@ export default function SettingsPage() {
                     <Crest nom={f.domicile} taille="sm" />
                     <span>
                       <strong>
-                        {f.domicile} — {f.exterieur}
+                        {f.domicile} · {f.exterieur}
                       </strong>
                       <span className="muted small">
                         {f.competition} · {quandLabel(jourDeIso(f.date_heure))} · {heureCourte(f.date_heure)}
                       </span>
                     </span>
                   </Link>
-                  <button type="button" className="icon-btn" aria-label={'Retirer ' + f.domicile + ' — ' + f.exterieur + ' des favoris'} onClick={() => retirer(f.id)}>
+                  <button type="button" className="icon-btn" aria-label={'Retirer ' + f.domicile + ' · ' + f.exterieur + ' des favoris'} onClick={() => retirer(f.id)}>
                     <Icon name="x" size={18} strokeWidth={2} />
                   </button>
                 </div>
@@ -115,7 +115,7 @@ export default function SettingsPage() {
           <section aria-labelledby="affichage" className="stack-sm">
             <SectionTitle id="affichage">Affichage</SectionTitle>
             <div className="card list">
-              <Interrupteur cle="cotes" icone="chart" titre="Afficher les cotes" aide="Masque toutes les cotes et les écarts qui en dépendent." />
+              <Interrupteur cle="cotes" icone="chart" titre="Afficher les cotes & Value Bets" aide="Affiche les cotes bookmakers et met en évidence les écarts positifs." />
               <Interrupteur cle="animations" icone="sparkle" titre="Animations" aide="Désactive les mouvements et les compteurs animés." />
             </div>
           </section>

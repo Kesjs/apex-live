@@ -35,6 +35,10 @@ export const httpProvider: ApexProvider = {
     const { data } = await requete<Prediction[]>('/api/matchs?date=' + encodeURIComponent(jour))
     return data ?? []
   },
+  async nextMatchday(from) {
+    const { data } = await requete<{ date: string | null; matchs: Prediction[] }>('/api/matchs?next=1&from=' + encodeURIComponent(from))
+    return data ?? { date: null, matchs: [] }
+  },
   async getMatch(matchId) {
     const { data } = await requete<Prediction>('/api/matchs/' + encodeURIComponent(matchId))
     return data

@@ -4,15 +4,23 @@ import type { ReactNode } from 'react'
 /** Réglages de l'utilisateur, gardés sur cet appareil. */
 export type Prefs = { cotes: boolean; animations: boolean }
 
-const DEFAUT: Prefs = { cotes: false, animations: true }
-const CLE = 'apex:prefs'
+const DEFAUT: Prefs = { cotes: true, animations: true }
+const CLE = 'apex:prefs:v2'
+const ANCIENNE_CLE = 'apex:prefs'
 
 function lire(): Prefs {
   try {
     const brut = window.localStorage.getItem(CLE)
-    if (!brut) return DEFAUT
-    const o = JSON.parse(brut) as Partial<Prefs>
-    return { cotes: Boolean(o.cotes), animations: o.animations !== false }
+    if (brut) {
+      const o = JSON.parse(brut) as Partial<Prefs>
+      return { cotes: o.cotes !== false, animations: o.animations !== false }
+    }
+    const ancien = window.localStorage.getItem(ANCIENNE_CLE)
+    if (ancien) {
+      const o = JSON.parse(ancien) as Partial<Prefs>
+      return { cotes: true, animations: o.animations !== false }
+    }
+    return DEFAUT
   } catch {
     return DEFAUT
   }

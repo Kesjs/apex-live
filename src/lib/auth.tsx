@@ -64,6 +64,7 @@ async function appeler(chemin: string, corps: Record<string, string>): Promise<{
     method: 'POST',
     headers: { 'content-type': 'application/json', apikey: CLE_ANON as string },
     body: JSON.stringify(corps),
+    signal: AbortSignal.timeout(6000),
   })
   const data = (await reponse.json().catch(() => ({}))) as Corps
   return { ok: reponse.ok, data }

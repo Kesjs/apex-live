@@ -50,7 +50,7 @@ export default function FavoritesPage() {
                   <Crest nom={f.domicile} taille="sm" />
                   <div style={{ minWidth: 0, overflow: 'hidden' }}>
                     <strong style={{ display: 'block', fontSize: '15px', color: 'var(--tx)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {f.domicile} — {f.exterieur}
+                      {f.domicile} · {f.exterieur}
                     </strong>
                     <span className="muted small" style={{ display: 'block', fontSize: '12.5px', color: 'var(--mu)', marginTop: '2px' }}>
                       {f.competition} · {quandLabel(jourDeIso(f.date_heure))} · {heureCourte(f.date_heure)}
@@ -68,7 +68,7 @@ export default function FavoritesPage() {
                   <button
                     type="button"
                     className="icon-btn"
-                    aria-label={'Retirer ' + f.domicile + ' — ' + f.exterieur + ' des favoris'}
+                    aria-label={'Retirer ' + f.domicile + ' · ' + f.exterieur + ' des favoris'}
                     onClick={() => retirer(f.id)}
                     title="Retirer des favoris"
                   >

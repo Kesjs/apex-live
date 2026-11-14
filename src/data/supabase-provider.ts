@@ -1,4 +1,4 @@
-import type { ApexProvider, Historique, JourHistorique, NewsArticle, PeriodeHistorique, PilierId, Prediction, TauxPilier } from '../domain/contracts'
+import type { ApexProvider, JourHistorique, NewsArticle, PeriodeHistorique, PilierId, Prediction, TauxPilier } from '../domain/contracts'
 import { httpProvider } from './http-provider'
 
 /**

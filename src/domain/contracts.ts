@@ -195,6 +195,8 @@ export interface NewsArticle {
 export interface ApexProvider {
   /** Fiches d'une journée (AAAA-MM-JJ). Tableau vide si aucun match. */
   listMatches(jour: string): Promise<Prediction[]>
+  /** Prochaine journée comportant au moins un match à partir de `from`. */
+  nextMatchday?(from: string): Promise<{ date: string | null; matchs: Prediction[] }>
   /** null si le match n'existe pas. */
   getMatch(matchId: string): Promise<Prediction | null>
   getHistory(periode: PeriodeHistorique): Promise<Historique>

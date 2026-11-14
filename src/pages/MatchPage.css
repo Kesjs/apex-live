@@ -26,7 +26,7 @@
 .prediction-grid .pillar { padding:16px; min-width:0; }
 .prediction-grid .pillar h3 { font-size:16px; }
 .prediction-grid .pillar-prob { margin:12px 0; }
-.prediction-grid .combo-pillar { grid-column:1 / -1; background:linear-gradient(135deg, #ffffff, #f0fdf4); border:1px solid rgba(10, 166, 106, 0.28); box-shadow:0 2px 12px rgba(10, 166, 106, 0.08); }
+.prediction-grid .combo-pillar { grid-column:1 / -1; background:linear-gradient(135deg, #ffffff, #f2fbf6); border:1px solid var(--acl); box-shadow:0 2px 12px rgba(4, 120, 87, 0.08); }
 .analysis-notice { display:flex; align-items:flex-start; gap:10px; color:var(--mu); font-size:13px; }
 .analysis-notice svg { flex:none; color:var(--ac); }
 .row-final-score { color:var(--tx); font-size:20px; letter-spacing:.08em; }
@@ -34,7 +34,7 @@
 .match-page .stat-row strong { overflow-wrap:anywhere; }
 .match-page .summary-highlight { align-items:center; flex-wrap:wrap; }
 .match-page .match-summary p { font-size:14px; }
-@media(min-width:900px) { .app { grid-template-columns:220px minmax(0,1fr); } .match-page { padding:24px; } }
+@media(min-width:900px) { .match-page { padding:24px; } }
 @media(max-width:1099px) { .match-page .detail-grid { grid-template-columns:minmax(0,1fr); } .match-context { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); } .match-ad { grid-column:1/-1; } }
 @media(max-width:599px) {
  .match-header { padding:12px; } .match-heading { gap:4px; } .match-heading time { font-size:11px; width:100%; text-align:center; }
