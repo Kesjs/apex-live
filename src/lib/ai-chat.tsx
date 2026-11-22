@@ -24,6 +24,34 @@ const MAX_CREDITS = 20
 const CREDIT_WINDOW_MS = 2 * 60 * 60 * 1000
 const CREDITS_KEY = 'apex:ai:credits:v2'
 const MESSAGES_KEY = 'apex:ai:messages:v1'
+const THREADS_KEY = 'apex:ai:threads:v1'
+const MAX_THREADS = 15
+
+export interface ChatThread {
+  id: string
+  title: string
+  updatedAt: number
+  messages: ChatMessage[]
+}
+
+function readThreads(): ChatThread[] {
+  try {
+    const raw = window.localStorage.getItem(THREADS_KEY)
+    if (!raw) return []
+    const arr = JSON.parse(raw) as ChatThread[]
+    return Array.isArray(arr) ? arr.slice(0, MAX_THREADS) : []
+  } catch {
+    return []
+  }
+}
+
+function writeThreads(threads: ChatThread[]): void {
+  try {
+    window.localStorage.setItem(THREADS_KEY, JSON.stringify(threads.slice(0, MAX_THREADS)))
+  } catch {
+    /* ignore */
+  }
+}
 
 function formatResetIn(resetAt: number): string {
   const diffMin = Math.max(1, Math.ceil((resetAt - Date.now()) / 60_000))
@@ -132,6 +160,13 @@ interface AiChatContextValue {
   maxCredits: number
   creditPct: number
   resetInLabel: string
+  threads: ChatThread[]
+  activeThreadId: string | null
+  historyOpen: boolean
+  setHistoryOpen: (open: boolean) => void
+  selectThread: (id: string) => void
+  deleteThread: (id: string) => void
+  regenerateLast: () => Promise<void>
   open: (opts?: { match?: Prediction | null; prefill?: string }) => void
   close: () => void
   toggle: () => void
@@ -156,6 +191,13 @@ const AiChatContext = createContext<AiChatContextValue>({
   maxCredits: MAX_CREDITS,
   creditPct: 100,
   resetInLabel: '2h',
+  threads: [],
+  activeThreadId: null,
+  historyOpen: false,
+  setHistoryOpen: () => undefined,
+  selectThread: () => undefined,
+  deleteThread: () => undefined,
+  regenerateLast: async () => undefined,
   open: () => undefined,
   close: () => undefined,
   toggle: () => undefined,
@@ -173,6 +215,9 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
   const [screenContext, setScreenContext] = useState<ScreenContext | null>(null)
   const [contextAttached, setContextAttached] = useState(true)
   const [messages, setMessages] = useState<ChatMessage[]>(() => readMessages())
+  const [threads, setThreads] = useState<ChatThread[]>(() => readThreads())
+  const [activeThreadId, setActiveThreadId] = useState<string | null>(null)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [sending, setSending] = useState(false)
   const [streamingId, setStreamingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -186,7 +231,24 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     writeMessages(messages)
-  }, [messages])
+    if (messages.length === 0) return
+    const firstUser = messages.find(m => m.role === 'user')?.text ?? 'Discussion Apex IA'
+    const autoTitle = activeMatch
+      ? `${activeMatch.equipes.domicile} · ${activeMatch.equipes.exterieur}`
+      : firstUser.length > 44
+        ? `${firstUser.slice(0, 44)}…`
+        : firstUser
+    const threadId = activeThreadId ?? `t-${Date.now()}`
+    if (!activeThreadId) setActiveThreadId(threadId)
+    setThreads(prev => {
+      const next: ChatThread[] = [
+        { id: threadId, title: autoTitle, updatedAt: Date.now(), messages: messages.slice(-24) },
+        ...prev.filter(t => t.id !== threadId),
+      ].slice(0, MAX_THREADS)
+      writeThreads(next)
+      return next
+    })
+  }, [messages, activeThreadId, activeMatch])
 
   const creditsLeft = Math.max(0, MAX_CREDITS - credits.used)
   const creditPct = Math.round((creditsLeft / MAX_CREDITS) * 100)
@@ -385,10 +447,50 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
   const resetConversation = useCallback(() => {
     stopGenerating()
     setMessages([])
+    setActiveThreadId(null)
+    setHistoryOpen(false)
     setStreamingId(null)
     setSending(false)
     setError(null)
   }, [stopGenerating])
+
+  const selectThread = useCallback(
+    (id: string) => {
+      stopGenerating()
+      const found = threads.find(t => t.id === id)
+      if (!found) return
+      setActiveThreadId(found.id)
+      setMessages(found.messages)
+      setHistoryOpen(false)
+      setError(null)
+    },
+    [stopGenerating, threads],
+  )
+
+  const deleteThread = useCallback(
+    (id: string) => {
+      setThreads(prev => {
+        const next = prev.filter(t => t.id !== id)
+        writeThreads(next)
+        return next
+      })
+      if (activeThreadId === id) {
+        setActiveThreadId(null)
+        setMessages([])
+      }
+    },
+    [activeThreadId],
+  )
+
+  const regenerateLast = useCallback(async () => {
+    if (sending) return
+    const lastUserIdx = [...messages].reverse().findIndex(m => m.role === 'user')
+    if (lastUserIdx === -1) return
+    const realIdx = messages.length - 1 - lastUserIdx
+    const lastPrompt = messages[realIdx].text
+    setMessages(prev => prev.slice(0, realIdx))
+    await sendMessage(lastPrompt, 'Libre')
+  }, [messages, sending, sendMessage])
 
   const value = useMemo<AiChatContextValue>(
     () => ({
@@ -404,6 +506,13 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       maxCredits: MAX_CREDITS,
       creditPct,
       resetInLabel,
+      threads,
+      activeThreadId,
+      historyOpen,
+      setHistoryOpen,
+      selectThread,
+      deleteThread,
+      regenerateLast,
       open,
       close,
       toggle,
@@ -421,6 +530,12 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       creditsLeft,
       creditPct,
       resetInLabel,
+      threads,
+      activeThreadId,
+      historyOpen,
+      selectThread,
+      deleteThread,
+      regenerateLast,
       error,
       isOpen,
       messages,

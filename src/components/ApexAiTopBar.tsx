@@ -15,8 +15,9 @@ export function ApexAiTopBar() {
     screenContext,
     contextAttached,
     messages,
-    creditPct,
-    resetInLabel,
+    threads,
+    historyOpen,
+    setHistoryOpen,
     open,
     close,
     resetConversation,
@@ -81,19 +82,25 @@ export function ApexAiTopBar() {
                 </div>
               </div>
               <div className="apex-ai-drawer__controls">
-                <span
-                  className={'apex-ai-credits' + (creditPct <= 25 ? ' is-low' : '')}
-                  title={`Capacité disponible : ${creditPct} % · Recharge automatique dans ${resetInLabel}`}
-                >
-                  {creditPct} %
-                </span>
-                {messages.length > 0 && (
+                {threads.length > 0 && (
+                  <button
+                    type="button"
+                    className={'apex-ai-icon-btn' + (historyOpen ? ' is-active' : '')}
+                    onClick={() => setHistoryOpen(!historyOpen)}
+                    title="Historique des discussions"
+                    aria-label="Historique des discussions"
+                    aria-pressed={historyOpen}
+                  >
+                    <Icon name="clock" size={16} />
+                  </button>
+                )}
+                {(messages.length > 0 || historyOpen) && (
                   <button
                     type="button"
                     className="apex-ai-icon-btn"
                     onClick={resetConversation}
-                    title="Nouvelle conversation"
-                    aria-label="Nouvelle conversation"
+                    title="Nouvelle discussion"
+                    aria-label="Nouvelle discussion"
                   >
                     <Icon name="refresh" size={16} />
                   </button>

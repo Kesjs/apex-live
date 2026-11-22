@@ -147,6 +147,12 @@ export default function ChatComposer() {
     creditsLeft,
     creditPct,
     resetInLabel,
+    threads,
+    activeThreadId,
+    historyOpen,
+    selectThread,
+    deleteThread,
+    regenerateLast,
     sendMessage,
     stopGenerating,
   } = useAiChat()
@@ -237,7 +243,36 @@ export default function ChatComposer() {
       )}
 
       <div className="apex-chat-thread" ref={threadRef} aria-live="polite">
-        {messages.length === 0 ? (
+        {historyOpen ? (
+          <div className="apex-chat-history">
+            <p className="apex-chat-history__title">Discussions récentes</p>
+            {threads.length === 0 ? (
+              <p className="muted small">Aucune discussion enregistrée pour le moment.</p>
+            ) : (
+              <ul className="apex-chat-history__list">
+                {threads.map(t => (
+                  <li key={t.id} className={'apex-chat-thread-item' + (t.id === activeThreadId ? ' is-active' : '')}>
+                    <button type="button" className="apex-chat-thread-open" onClick={() => selectThread(t.id)}>
+                      <strong>{t.title}</strong>
+                      <span>
+                        {t.messages.length} msg · {new Date(t.updatedAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' })}
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className="apex-chat-thread-del"
+                      onClick={() => deleteThread(t.id)}
+                      aria-label={`Supprimer ${t.title}`}
+                      title="Supprimer"
+                    >
+                      <Icon name="x" size={14} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : messages.length === 0 ? (
           <div className="apex-chat-empty">
             <p className="apex-chat-empty__title">
               {contextAttached && activeMatch
@@ -264,29 +299,57 @@ export default function ChatComposer() {
             </div>
           </div>
         ) : (
-          messages.map(msg => (
-            <div
-              key={msg.id}
-              className={`apex-chat-bubble ${msg.role === 'user' ? 'apex-chat-bubble--user' : 'apex-chat-bubble--assistant'}`}
-            >
-              <div className="apex-chat-bubble__meta">
-                <span>{msg.role === 'user' ? 'Vous' : msg.meta || 'Apex IA'}</span>
-                <span>{msg.timestamp}</span>
-              </div>
-              {msg.role === 'assistant' ? (
-                <>
-                  <FormattedReply text={msg.text} streaming={streamingId === msg.id} />
-                  {streamingId !== msg.id && msg.text && (
-                    <div className="apex-chat-bubble__foot">
-                      <CopyReplyButton text={msg.text} />
-                    </div>
+          <>
+            {messages.map((msg, idx) => {
+              const isLast = idx === messages.length - 1
+              return (
+                <div
+                  key={msg.id}
+                  className={`apex-chat-bubble ${msg.role === 'user' ? 'apex-chat-bubble--user' : 'apex-chat-bubble--assistant'}`}
+                >
+                  <div className="apex-chat-bubble__meta">
+                    <span>{msg.role === 'user' ? 'Vous' : msg.meta || 'Apex IA'}</span>
+                    <span>{msg.timestamp}</span>
+                  </div>
+                  {msg.role === 'assistant' ? (
+                    <>
+                      <FormattedReply text={msg.text} streaming={streamingId === msg.id} />
+                      {streamingId !== msg.id && msg.text && (
+                        <div className="apex-chat-bubble__foot">
+                          {isLast && !sending && (
+                            <button
+                              type="button"
+                              className="apex-chat-copy-btn"
+                              onClick={() => void regenerateLast()}
+                              aria-label="Régénérer la réponse"
+                            >
+                              <Icon name="refresh" size={13} />
+                              <span>Régénérer</span>
+                            </button>
+                          )}
+                          <CopyReplyButton text={msg.text} />
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <p className="apex-chat-bubble__p">{msg.text}</p>
                   )}
-                </>
-              ) : (
-                <p className="apex-chat-bubble__p">{msg.text}</p>
-              )}
-            </div>
-          ))
+                </div>
+              )
+            })}
+            {!sending && messages[messages.length - 1]?.role === 'assistant' && creditsLeft > 0 && (
+              <div className="apex-chat-followups">
+                {(contextAttached && activeMatch
+                  ? ['Risques sur ce match ?', 'Alternative plus sûre ?']
+                  : ['Résume en 3 points', 'Donne un exemple concret']
+                ).map(q => (
+                  <button key={q} type="button" className="apex-chat-followup-btn" onClick={() => void submit(q)}>
+                    {q}
+                  </button>
+                ))}
+              </div>
+            )}
+          </>
         )}
 
         {sending && !streamingId && (
