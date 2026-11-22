@@ -211,7 +211,6 @@ function buildRecentHistorique(matches: FdMatch[], currentId: string, beforeJour
 function buildH2H(
   raw: FdHead2HeadResponse | null,
   currentId: string,
-  homeTeamId: number | undefined,
   domName: string,
 ): BilanH2H | undefined {
   if (!raw?.matches?.length) return undefined
@@ -221,22 +220,6 @@ function buildH2H(
     .map(fdMatchToHistorique)
     .filter((x): x is MatchHistorique => x !== null)
   if (matchs.length === 0) return undefined
-
-  const agg = raw.aggregates
-  if (
-    agg?.homeTeam?.wins != null &&
-    agg?.awayTeam?.wins != null &&
-    agg?.homeTeam?.draws != null &&
-    (!homeTeamId || agg.homeTeam.id === homeTeamId)
-  ) {
-    return {
-      total: agg.numberOfMatches ?? matchs.length,
-      victoires_domicile: agg.homeTeam.wins,
-      nuls: agg.homeTeam.draws,
-      victoires_exterieur: agg.awayTeam.wins,
-      matchs,
-    }
-  }
 
   let victoiresDom = 0
   let nuls = 0
@@ -781,7 +764,7 @@ export async function getMatchById(id: string, env: Record<string, string | unde
     awayGoals: m.score?.fullTime?.away,
     bonus: csvBonus,
   })
-  const h2h = buildH2H(fdH2H, id, m.homeTeam.id, m.homeTeam.name)
+  const h2h = buildH2H(fdH2H, id, m.homeTeam.name)
   if (h2h) fiche.h2h = h2h
   const histDom = buildRecentHistorique(fdDom, id, jour)
   const histExt = buildRecentHistorique(fdExt, id, jour)

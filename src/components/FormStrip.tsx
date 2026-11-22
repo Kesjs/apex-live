@@ -42,7 +42,7 @@ function ColonneMatchs({ nom, matchs }: { nom: string; matchs: MatchHistorique[]
           return (
             <li key={m.id} className="team-form-row" title={`${m.domicile} ${m.score_domicile}-${m.score_exterieur} ${m.exterieur}`}>
               <Crest nom={m.domicile} logoUrl={m.logo_domicile} taille="sm" />
-              <span className={'team-form-score tn form-' + res}>
+              <span className={'team-form-score tn score-' + res}>
                 {m.score_domicile}-{m.score_exterieur}
               </span>
               <Crest nom={m.exterieur} logoUrl={m.logo_exterieur} taille="sm" />

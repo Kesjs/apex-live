@@ -9,56 +9,64 @@ type Ligne = {
   /** true = plus c'est haut, mieux c'est ; false = plus c'est bas, mieux c'est ; null = pas de « meilleur ». */
   plusEstMieux: boolean | null
   format: (n: number) => string
-  /** Moyenne de la compétition (affichée entre parenthèses). */
-  moyenne?: number
 }
 
-function Valeur({ v, meilleur, texte, moyenne }: { v: number; meilleur: boolean; texte: (n: number) => string; moyenne?: number }) {
-  return (
-    <span className={'cmp-val tn' + (meilleur ? ' is-best' : '')}>
-      <strong>{texte(v)}</strong>
-      {moyenne !== undefined && <small>({texte(moyenne)})</small>}
-    </span>
-  )
-}
-
-/** Statistiques des deux équipes face à face, avec la moyenne de la ligue et la meilleure valeur en vert. */
+/** Statistiques des deux équipes face à face avec barres de comparaison visuelles. */
 export function StatsComparees({ fiche }: { fiche: Prediction }) {
   const s = fiche.stats
   if (!s) return null
-  const m = s.moyenne_ligue
   const lignes: Ligne[] = [
     { label: 'Buts attendus (modèle)', g: s.buts_attendus.domicile, d: s.buts_attendus.exterieur, plusEstMieux: true, format: decimal },
-    { label: 'Buts marqués / match', g: s.domicile.buts_marques, d: s.exterieur.buts_marques, plusEstMieux: true, format: decimal, moyenne: m?.buts_marques },
-    { label: 'Buts encaissés / match', g: s.domicile.buts_encaisses, d: s.exterieur.buts_encaisses, plusEstMieux: false, format: decimal, moyenne: m?.buts_encaisses },
+    { label: 'Buts marqués / match', g: s.domicile.buts_marques, d: s.exterieur.buts_marques, plusEstMieux: true, format: decimal },
+    { label: 'Buts encaissés / match', g: s.domicile.buts_encaisses, d: s.exterieur.buts_encaisses, plusEstMieux: false, format: decimal },
     { label: 'Matchs à plus de 2,5 buts', g: s.domicile.plus_2_5, d: s.exterieur.plus_2_5, plusEstMieux: null, format: n => pct(n) },
     { label: 'Les deux équipes marquent', g: s.domicile.deux_marquent, d: s.exterieur.deux_marquent, plusEstMieux: null, format: n => pct(n) },
     { label: 'Matchs sans encaisser', g: s.domicile.sans_encaisser, d: s.exterieur.sans_encaisser, plusEstMieux: true, format: n => pct(n) },
   ]
+  const nbMatchs = Math.max(s.domicile.matchs, s.exterieur.matchs)
+
   return (
     <section className="card data-card" aria-labelledby="stats-equipes">
       <SectionTitle id="stats-equipes">Comparaison avant le match</SectionTitle>
-      <p className="muted small cmp-note">Historique : {s.domicile.matchs} match(s) côté domicile, {s.exterieur.matchs} côté extérieur, avant cette rencontre.</p>
-      <div className="stat-table">
-        <div className="stat-row stat-head">
+      <p className="muted small cmp-note">Moyenne calculée sur les {nbMatchs} derniers matchs avant cette rencontre.</p>
+
+      <div className="cmp-list">
+        <div className="cmp-head">
           <span>{fiche.equipes.domicile}</span>
-          <span>Indicateur</span>
           <span>{fiche.equipes.exterieur}</span>
         </div>
+
         {lignes.map(l => {
           const egal = l.g === l.d
           const gMieux = l.plusEstMieux !== null && !egal && (l.plusEstMieux ? l.g > l.d : l.g < l.d)
           const dMieux = l.plusEstMieux !== null && !egal && !gMieux
+          const total = l.g + l.d
+          const pctG = total > 0 ? Math.round((l.g / total) * 100) : 50
+          const pctD = total > 0 ? 100 - pctG : 50
+
           return (
-            <div className="stat-row" key={l.label}>
-              {s.domicile.matchs === 0 ? <span>Indisponible</span> : <Valeur v={l.g} meilleur={gMieux} texte={l.format} moyenne={l.moyenne} />}
-              <span>{l.label}</span>
-              {s.exterieur.matchs === 0 ? <span>Indisponible</span> : <Valeur v={l.d} meilleur={dMieux} texte={l.format} moyenne={l.moyenne} />}
+            <div className="cmp-item" key={l.label}>
+              <div className="cmp-item-top">
+                <strong className={'cmp-num tn' + (gMieux ? ' is-best' : '')}>
+                  {s.domicile.matchs === 0 ? '—' : l.format(l.g)}
+                </strong>
+                <span className="cmp-label">{l.label}</span>
+                <strong className={'cmp-num tn' + (dMieux ? ' is-best' : '')}>
+                  {s.exterieur.matchs === 0 ? '—' : l.format(l.d)}
+                </strong>
+              </div>
+              <div className="cmp-bars" aria-hidden="true">
+                <div className="cmp-track cmp-track-left">
+                  <span className={'cmp-fill' + (gMieux ? ' is-best' : '')} style={{ width: `${pctG}%` }} />
+                </div>
+                <div className="cmp-track cmp-track-right">
+                  <span className={'cmp-fill' + (dMieux ? ' is-best' : '')} style={{ width: `${pctD}%` }} />
+                </div>
+              </div>
             </div>
           )
         })}
       </div>
-      {m && <p className="muted small cmp-note">Les valeurs entre parenthèses sont la moyenne de la compétition. En vert : la meilleure valeur des deux équipes.</p>}
     </section>
   )
 }

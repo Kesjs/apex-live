@@ -128,7 +128,7 @@
   color: var(--ac);
 }
 
-.h2h-summary { display: flex; flex-direction: column; gap: 10px; }
+.h2h-summary { display: flex; flex-direction: column; gap: 10px; padding: 16px; }
 .h2h-bar {
   display: flex;
   height: 10px;
@@ -147,7 +147,7 @@
   gap: 8px;
 }
 
-.h2h-list-card { display: flex; flex-direction: column; gap: 12px; }
+.h2h-list-card { display: flex; flex-direction: column; gap: 12px; padding: 16px; }
 .h2h-groups { display: flex; flex-direction: column; gap: 14px; }
 .h2h-comp-label {
   font-size: 12px;
@@ -210,6 +210,7 @@
 /* ---------- Bloc À propos du match ---------- */
 .match-about {
   margin-top: 4px;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -265,6 +266,69 @@
   font-weight: 700;
   color: #ffffff;
 }
-.team-form-score.form-V { background: var(--ac, #15803d); }
-.team-form-score.form-N { background: #94a3b8; }
-.team-form-score.form-D { background: var(--ko, #dc2626); }
+.team-form-score.score-V { background: #15803d; color: #ffffff; }
+.team-form-score.score-N { background: #64748b; color: #ffffff; }
+.team-form-score.score-D { background: #dc2626; color: #ffffff; }
+
+
+/* ---------- Comparaison avant le match avec barres visuelles ---------- */
+.cmp-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 12px;
+}
+.cmp-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink, #111827);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line, #e5e7eb);
+}
+.cmp-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cmp-item-top {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 56px;
+  align-items: center;
+  gap: 8px;
+}
+.cmp-num {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--muted, #4b5563);
+}
+.cmp-num:last-child { text-align: right; }
+.cmp-num.is-best { color: var(--ac, #15803d); font-weight: 800; }
+.cmp-label {
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--muted, #4b5563);
+}
+.cmp-bars {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+}
+.cmp-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--bg-soft, #eef2ef);
+  overflow: hidden;
+  display: flex;
+}
+.cmp-track-left { justify-content: flex-end; }
+.cmp-track-right { justify-content: flex-start; }
+.cmp-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #cbd5e1;
+  transition: width 220ms ease;
+}
+.cmp-fill.is-best { background: var(--ac, #15803d); }
