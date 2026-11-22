@@ -96,17 +96,21 @@
 
 @media (max-width: 767px) {
   .apex-ai-backdrop {
-    align-items: flex-end;
-    justify-content: center;
+    align-items: stretch;
+    justify-content: stretch;
   }
   .apex-ai-drawer {
     width: 100vw;
-    height: min(86dvh, 720px);
+    height: 100dvh;
+    max-height: 100dvh;
     border-left: 0;
-    border-top: 1px solid var(--ln);
-    border-radius: 20px 20px 0 0;
-    box-shadow: 0 -12px 36px rgba(15, 29, 23, 0.2);
-    animation: apexAiSlideUp 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+    border-top: 0;
+    border-radius: 0;
+    box-shadow: none;
+    animation: apexAiSlideUp 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .apex-chat-composer__input {
+    font-size: 16px;
   }
 }
 
@@ -479,6 +483,7 @@
 
 .apex-chat-composer__input {
   flex: 1;
+  min-width: 0;
   min-height: 24px;
   max-height: 112px;
   resize: none;
@@ -489,6 +494,10 @@
   font-size: 14px;
   line-height: 1.4;
   padding: 3px 0;
+  outline: none;
+}
+
+.apex-chat-composer__input:focus-visible {
   outline: none;
 }
 
@@ -536,4 +545,47 @@
   height: 11px;
   border-radius: 2px;
   background: var(--tx);
+}
+
+
+.apex-ai-credits.is-low {
+  background: rgba(217, 119, 6, 0.12);
+  color: var(--am, #b45309);
+  border-color: rgba(217, 119, 6, 0.3);
+}
+
+.apex-chat-capacity-note {
+  margin: 0 0 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(217, 119, 6, 0.1);
+  color: var(--am, #b45309);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.apex-chat-bubble__foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.apex-chat-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--ln);
+  background: var(--card);
+  color: var(--mu);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.apex-chat-copy-btn:hover {
+  border-color: var(--acl);
+  color: var(--ac);
 }

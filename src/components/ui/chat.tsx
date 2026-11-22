@@ -22,8 +22,47 @@ function renderInlineMarkdown(text: string) {
   })
 }
 
+function useSmoothStream(text: string, streaming?: boolean): string {
+  const [shownLen, setShownLen] = useState(() => (streaming ? 0 : text.length))
+
+  useEffect(() => {
+    if (!streaming) {
+      setShownLen(text.length)
+      return
+    }
+    if (shownLen >= text.length) return
+    const step = Math.max(2, Math.ceil((text.length - shownLen) / 8))
+    const timer = window.setTimeout(() => {
+      setShownLen(len => Math.min(text.length, len + step))
+    }, 16)
+    return () => window.clearTimeout(timer)
+  }, [text, streaming, shownLen])
+
+  return streaming ? text.slice(0, shownLen) : text
+}
+
+function CopyReplyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false)
+  const onCopy = async () => {
+    try {
+      await navigator.clipboard?.writeText(text)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1800)
+    } catch {
+      /* ignore */
+    }
+  }
+  return (
+    <button type="button" className="apex-chat-copy-btn" onClick={onCopy} aria-label="Copier la réponse">
+      <Icon name={copied ? 'check' : 'copy'} size={13} />
+      <span>{copied ? 'Copié' : 'Copier'}</span>
+    </button>
+  )
+}
+
 function FormattedReply({ text, streaming }: { text: string; streaming?: boolean }) {
-  const lines = text.split('\n').map(l => l.trimEnd())
+  const visibleText = useSmoothStream(text, streaming)
+  const lines = visibleText.split('\n').map(l => l.trimEnd())
   const blocks: Array<
     | { type: 'h'; content: string }
     | { type: 'p'; content: string }
@@ -106,6 +145,8 @@ export default function ChatComposer() {
     streamingId,
     error,
     creditsLeft,
+    creditPct,
+    resetInLabel,
     sendMessage,
     stopGenerating,
   } = useAiChat()
@@ -233,7 +274,14 @@ export default function ChatComposer() {
                 <span>{msg.timestamp}</span>
               </div>
               {msg.role === 'assistant' ? (
-                <FormattedReply text={msg.text} streaming={streamingId === msg.id} />
+                <>
+                  <FormattedReply text={msg.text} streaming={streamingId === msg.id} />
+                  {streamingId !== msg.id && msg.text && (
+                    <div className="apex-chat-bubble__foot">
+                      <CopyReplyButton text={msg.text} />
+                    </div>
+                  )}
+                </>
               ) : (
                 <p className="apex-chat-bubble__p">{msg.text}</p>
               )}
@@ -263,6 +311,13 @@ export default function ChatComposer() {
           void submit()
         }}
       >
+        {creditPct <= 25 && (
+          <p className="apex-chat-capacity-note" role="status">
+            {creditsLeft > 0
+              ? `Capacité restante : ${creditPct} % · Recharge dans ${resetInLabel}`
+              : `Capacité atteinte · Recharge automatique dans ${resetInLabel}`}
+          </p>
+        )}
         <div className="apex-chat-composer__box">
           <textarea
             ref={inputRef}
@@ -278,7 +333,7 @@ export default function ChatComposer() {
             }}
             placeholder={
               creditsLeft <= 0
-                ? 'Crédits temporairement épuisés…'
+                ? `Capacité atteinte · Recharge dans ${resetInLabel}`
                 : contextAttached && activeMatch
                   ? `Écrire à propos de ${activeMatch.equipes.domicile} · ${activeMatch.equipes.exterieur}…`
                   : 'Écrire un message à Apex IA…'

@@ -20,10 +20,18 @@ export interface ScreenContext {
   historySummary?: string
 }
 
-const MAX_CREDITS = 10
-const CREDIT_WINDOW_MS = 15 * 60 * 60 * 1000
-const CREDITS_KEY = 'apex:ai:credits:v1'
+const MAX_CREDITS = 20
+const CREDIT_WINDOW_MS = 2 * 60 * 60 * 1000
+const CREDITS_KEY = 'apex:ai:credits:v2'
 const MESSAGES_KEY = 'apex:ai:messages:v1'
+
+function formatResetIn(resetAt: number): string {
+  const diffMin = Math.max(1, Math.ceil((resetAt - Date.now()) / 60_000))
+  const h = Math.floor(diffMin / 60)
+  const m = diffMin % 60
+  if (h <= 0) return `${m} min`
+  return m > 0 ? `${h}h ${m}m` : `${h}h`
+}
 
 interface CreditState {
   used: number
@@ -122,6 +130,8 @@ interface AiChatContextValue {
   error: string | null
   creditsLeft: number
   maxCredits: number
+  creditPct: number
+  resetInLabel: string
   open: (opts?: { match?: Prediction | null; prefill?: string }) => void
   close: () => void
   toggle: () => void
@@ -144,6 +154,8 @@ const AiChatContext = createContext<AiChatContextValue>({
   error: null,
   creditsLeft: MAX_CREDITS,
   maxCredits: MAX_CREDITS,
+  creditPct: 100,
+  resetInLabel: '2h',
   open: () => undefined,
   close: () => undefined,
   toggle: () => undefined,
@@ -177,6 +189,8 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
   }, [messages])
 
   const creditsLeft = Math.max(0, MAX_CREDITS - credits.used)
+  const creditPct = Math.round((creditsLeft / MAX_CREDITS) * 100)
+  const resetInLabel = formatResetIn(credits.resetAt)
 
   const stopGenerating = useCallback(() => {
     if (abortRef.current) {
@@ -192,7 +206,7 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       const freshCredits = readCredits()
       setCredits(freshCredits)
       if (freshCredits.used >= MAX_CREDITS) {
-        setError('Quota de questions atteint pour cette fenêtre. Revenez dans quelques heures.')
+        setError(`Capacité atteinte pour cette session. Recharge automatique dans ${formatResetIn(freshCredits.resetAt)}.`)
         return
       }
 
@@ -388,6 +402,8 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       error,
       creditsLeft,
       maxCredits: MAX_CREDITS,
+      creditPct,
+      resetInLabel,
       open,
       close,
       toggle,
@@ -403,6 +419,8 @@ export function AiChatProvider({ children }: { children: ReactNode }) {
       close,
       contextAttached,
       creditsLeft,
+      creditPct,
+      resetInLabel,
       error,
       isOpen,
       messages,

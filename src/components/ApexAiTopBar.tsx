@@ -15,8 +15,8 @@ export function ApexAiTopBar() {
     screenContext,
     contextAttached,
     messages,
-    creditsLeft,
-    maxCredits,
+    creditPct,
+    resetInLabel,
     open,
     close,
     resetConversation,
@@ -24,11 +24,16 @@ export function ApexAiTopBar() {
 
   useEffect(() => {
     if (!isOpen) return
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') close()
     }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = prevOverflow
+      window.removeEventListener('keydown', onKey)
+    }
   }, [isOpen, close])
 
   const subText = !contextAttached
@@ -76,8 +81,11 @@ export function ApexAiTopBar() {
                 </div>
               </div>
               <div className="apex-ai-drawer__controls">
-                <span className="apex-ai-credits" title="Questions disponibles dans cette fenêtre">
-                  {creditsLeft}/{maxCredits}
+                <span
+                  className={'apex-ai-credits' + (creditPct <= 25 ? ' is-low' : '')}
+                  title={`Capacité disponible : ${creditPct} % · Recharge automatique dans ${resetInLabel}`}
+                >
+                  {creditPct} %
                 </span>
                 {messages.length > 0 && (
                   <button
