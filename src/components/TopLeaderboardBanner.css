@@ -1,0 +1,254 @@
+.leaderboard-shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 12px 16px 0;
+}
+
+.leaderboard-ad {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  background: #0b1f17;
+  color: #ffffff;
+  padding: 12px 18px 16px;
+  box-shadow: 0 10px 28px rgba(11, 31, 23, 0.16);
+}
+
+.leaderboard-ad__bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center 45%;
+  opacity: 0.42;
+  pointer-events: none;
+}
+
+.leaderboard-ad__scrim {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 85% 20%, rgba(245, 158, 11, 0.24), transparent 48%),
+    linear-gradient(105deg, rgba(10, 27, 46, 0.92) 0%, rgba(12, 38, 28, 0.84) 55%, rgba(9, 26, 20, 0.92) 100%);
+  pointer-events: none;
+}
+
+.leaderboard-ad__sweep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    110deg,
+    transparent 25%,
+    rgba(110, 231, 183, 0.14) 48%,
+    rgba(251, 191, 36, 0.14) 52%,
+    transparent 75%
+  );
+  transform: translateX(-100%);
+  animation: leaderboardSweep 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes leaderboardSweep {
+  0%, 55% { transform: translateX(-100%); }
+  100% { transform: translateX(120%); }
+}
+
+@keyframes leaderboardFade {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.leaderboard-ad__inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.leaderboard-ad__brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  flex: none;
+}
+
+.leaderboard-ad__pub {
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.leaderboard-ad__logo {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 12px;
+  border-radius: 10px;
+  background: rgba(14, 48, 86, 0.85);
+  border: 1px solid rgba(96, 165, 250, 0.28);
+  font-family: var(--display);
+  font-size: 18px;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+}
+
+.leaderboard-ad__logo span {
+  color: #38bdf8;
+}
+
+.leaderboard-ad__copy {
+  flex: 1;
+  min-width: 0;
+  animation: leaderboardFade 300ms ease;
+}
+
+.leaderboard-ad__headline {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #ffffff;
+}
+
+.leaderboard-ad__sub {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  color: rgba(236, 253, 245, 0.78);
+}
+
+.leaderboard-ad__actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+.leaderboard-ad__coupon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 6px 5px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.leaderboard-ad__coupon-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.leaderboard-ad__coupon-code {
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: 0.02em;
+}
+
+.leaderboard-ad__copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border: 0;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #0b1f17;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.leaderboard-ad__copy-btn:hover {
+  background: #ecfdf5;
+}
+
+.leaderboard-ad__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: #16a34a;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background 140ms ease;
+}
+
+.leaderboard-ad__cta:hover {
+  background: #15803d;
+}
+
+.leaderboard-ad__legal {
+  position: absolute;
+  right: 18px;
+  bottom: 4px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.56);
+}
+
+@media (max-width: 820px) {
+  .leaderboard-shell {
+    padding: 8px 12px 0;
+  }
+  .leaderboard-ad {
+    padding: 10px 12px 14px;
+  }
+  .leaderboard-ad__inner {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .leaderboard-ad__brand {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+  }
+  .leaderboard-ad__logo {
+    padding: 4px 9px;
+    font-size: 14px;
+  }
+  .leaderboard-ad__headline {
+    font-size: 14px;
+  }
+  .leaderboard-ad__sub {
+    display: none;
+  }
+  .leaderboard-ad__actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .leaderboard-ad__coupon {
+    flex: 1;
+    justify-content: space-between;
+  }
+  .leaderboard-ad__coupon-label {
+    display: none;
+  }
+  .leaderboard-ad__legal {
+    position: static;
+    display: block;
+    margin-top: 6px;
+    text-align: right;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .leaderboard-ad__sweep,
+  .leaderboard-ad__copy {
+    animation: none;
+  }
+}

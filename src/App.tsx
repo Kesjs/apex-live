@@ -17,6 +17,7 @@ import { PrefsProvider } from './lib/prefs'
 import { Link, RouterProvider, useRouter } from './lib/router'
 import { ApexAiTopBar } from './components/ApexAiTopBar'
 import { PartnerStrip } from './components/PartnerStrip'
+import { TopLeaderboardBanner } from './components/TopLeaderboardBanner'
 import NewsPage from './pages/NewsPage'
 import FavoritesPage from './pages/FavoritesPage'
 
@@ -137,6 +138,7 @@ function Shell() {
         </form>
       </header>
       <main id="main" ref={principal} tabIndex={-1}>
+        <TopLeaderboardBanner />
         <div className="page" key={path}>
           <Routes />
         </div>
