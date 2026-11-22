@@ -20,6 +20,7 @@ import { PartnerStrip } from './components/PartnerStrip'
 import { TopLeaderboardBanner } from './components/TopLeaderboardBanner'
 import NewsPage from './pages/NewsPage'
 import FavoritesPage from './pages/FavoritesPage'
+import StudioPage from './pages/StudioPage'
 
 type Entree = { to: string; label: string; icone: IconName; actif: (path: string) => boolean }
 
@@ -42,6 +43,7 @@ const TITRES: Record<string, string> = {
   '/historique': 'Historique',
   '/reglages': 'Réglages',
   '/favoris': 'Favoris',
+  '/studio': 'Studio Affiches',
 }
 
 function Navigation({ variante }: { variante: 'sidebar' | 'bottom' }) {
@@ -70,6 +72,7 @@ function Routes(): ReactNode {
   if (path === '/historique') return <HistoryPage />
   if (path === '/reglages') return <SettingsPage />
   if (path === '/favoris') return <FavoritesPage />
+  if (path === '/studio') return <StudioPage />
   const detail = /^\/match\/([^/]+)\/?$/.exec(path)
   if (detail) return <MatchPage matchId={decodeURIComponent(detail[1])} />
   return (
