@@ -1,23 +1,18 @@
-import type { NiveauRisque, Prediction } from '../domain/contracts'
-import { heureCourte, quandLabel, jourDeFiche } from '../lib/format'
+import type { Prediction } from '../domain/contracts'
+import { heureCourte, jourDeFiche, pct, quandLabel } from '../lib/format'
+import { matchStatus } from '../lib/match-status'
 import { Link } from '../lib/router'
 import { Crest } from './Crest'
 import { Icon } from './Icon'
-import { Chip, Risque } from './ui'
 
-function risqueDepuisProba(p?: number): NiveauRisque {
-  if (p === undefined) return 'moyen'
-  if (p >= 0.72) return 'faible'
-  if (p >= 0.5) return 'moyen'
-  return 'eleve'
-}
-
-/** Match vedette : les 4 pronostics en un coup d'œil. */
+/** Match vedette (Option B) : carte Hero sombre vert forêt avec probabilités en clair. */
 export function FeaturedMatch({ fiche }: { fiche: Prediction }) {
   const p = fiche.pronostics
   if (!p) return null
+  const status = matchStatus(fiche)
+
   return (
-    <div className="card featured rise">
+    <div className="card featured featured-hero rise">
       <svg className="featured-deco" viewBox="0 0 260 260" fill="none" aria-hidden="true">
         <circle cx="130" cy="130" r="120" />
         <circle cx="130" cy="130" r="60" />
@@ -25,7 +20,7 @@ export function FeaturedMatch({ fiche }: { fiche: Prediction }) {
       </svg>
 
       <div className="featured-top">
-        <Chip>{fiche.competition}</Chip>
+        <span className="featured-league-pill">{fiche.competition}</span>
         <span className="tn featured-when">
           {quandLabel(jourDeFiche(fiche))} · {heureCourte(fiche.date_heure)}
         </span>
@@ -36,51 +31,44 @@ export function FeaturedMatch({ fiche }: { fiche: Prediction }) {
           <Crest nom={fiche.equipes.domicile} logoUrl={fiche.logos?.domicile} taille="xl" />
           <strong>{fiche.equipes.domicile}</strong>
         </div>
-        <span className="featured-vs">VS</span>
+        <div className="featured-center">
+          {(status.final || status.live) && status.score ? (
+            <>
+              <span className="featured-hero-score tn">{status.score}</span>
+              <span className="featured-status-pill">{status.label}</span>
+            </>
+          ) : (
+            <span className="featured-vs-pill">VS</span>
+          )}
+        </div>
         <div className="featured-team">
           <Crest nom={fiche.equipes.exterieur} logoUrl={fiche.logos?.exterieur} taille="xl" />
           <strong>{fiche.equipes.exterieur}</strong>
         </div>
       </div>
 
-      <div className="tiles">
-        <div className="tile">
-          <p className="kicker">1 · Issue</p>
-          <p className="tile-value">{p.issue.court ?? p.issue.selection}</p>
-          <p className="tile-foot">
-            <Risque niveau={risqueDepuisProba(p.issue.probabilite)} />
-          </p>
+      <div className="featured-metrics">
+        <div className="featured-metric">
+          <span className="featured-metric-label">Issue</span>
+          <strong className="featured-metric-val tn">
+            {p.issue.court ?? p.issue.selection} <em>{pct(p.issue.probabilite)}</em>
+          </strong>
         </div>
-        <div className="tile">
-          <p className="kicker">2 · Buts</p>
-          <p className="tile-value">{p.buts.court ?? p.buts.selection}</p>
-          <p className="tile-foot">
-            <Risque niveau={risqueDepuisProba(p.buts.probabilite)} />
-          </p>
+        <div className="featured-metric">
+          <span className="featured-metric-label">Buts</span>
+          <strong className="featured-metric-val tn">
+            {p.buts.court ?? p.buts.selection} <em>{pct(p.buts.probabilite)}</em>
+          </strong>
         </div>
-        <div className="tile">
-          <p className="kicker">3 · Bonus</p>
-          <p className="tile-value">{p.bonus ? p.bonus.court ?? p.bonus.selection : 'Pas de bonus'}</p>
-          <p className="tile-foot">
-            {p.bonus ? (
-              <Risque niveau="moyen" />
-            ) : (
-              <span className="muted">Aucun signal</span>
-            )}
-          </p>
-        </div>
-        <div className="tile">
-          <p className="kicker">4 · Score</p>
-          <p className="tile-value tn">{p.scores[0]?.score ?? '–'}</p>
-          <p className="tile-foot">
-            <Risque niveau="eleve" />
-          </p>
+        <div className="featured-metric">
+          <span className="featured-metric-label">Score</span>
+          <strong className="featured-metric-val tn">{p.scores[0]?.score ?? '–'}</strong>
         </div>
       </div>
 
-      <Link to={'/match/' + fiche.match_id} className="btn btn-primary featured-cta">
+      <Link to={'/match/' + fiche.match_id} className="btn featured-cta featured-hero-cta">
         Voir le détail et la synthèse
-        <Icon name="arrow" size={20} strokeWidth={2} />
+        <Icon name="arrow" size={18} strokeWidth={2} />
       </Link>
     </div>
   )

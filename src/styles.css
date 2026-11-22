@@ -2677,3 +2677,111 @@ main {
 .pm-legend { display: flex; justify-content: center; gap: 16px; margin: 10px 0; font-size: 12px; color: var(--mu); }
 .pm-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .pm-legend i { width: 12px; height: 12px; border-radius: 4px; display: inline-block; }
+
+
+/* ---------- Match Vedette Option B (Carte Hero sombre vert forêt) ---------- */
+.featured.featured-hero {
+  background: radial-gradient(circle at 80% 10%, rgba(34, 197, 94, 0.22), transparent 55%),
+    linear-gradient(155deg, #0d261c 0%, #143829 55%, #0b1f17 100%);
+  border-color: rgba(52, 211, 153, 0.24);
+  color: #f8fafc;
+  box-shadow: 0 18px 40px rgba(13, 38, 28, 0.24);
+}
+.featured-hero .featured-deco {
+  stroke: rgba(110, 231, 183, 0.12);
+}
+.featured-league-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #ecfdf5;
+  font-size: 12px;
+  font-weight: 600;
+}
+.featured-hero .featured-when {
+  color: rgba(236, 253, 245, 0.78);
+}
+.featured-hero .featured-team strong {
+  color: #ffffff;
+}
+.featured-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.featured-vs-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 11px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #d1fae5;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.featured-hero-score {
+  font-family: var(--display);
+  font-size: 28px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1;
+}
+.featured-status-pill {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(52, 211, 153, 0.2);
+  color: #a7f3d0;
+  font-size: 11px;
+  font-weight: 700;
+}
+.featured-metrics {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 12px 8px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.featured-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+  padding: 0 6px;
+}
+.featured-metric + .featured-metric {
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+}
+.featured-metric-label {
+  font-size: 11.5px;
+  color: rgba(236, 253, 245, 0.72);
+  font-weight: 500;
+}
+.featured-metric-val {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+}
+.featured-metric-val em {
+  font-style: normal;
+  color: #6ee7b7;
+  font-weight: 700;
+}
+.featured-hero-cta {
+  background: #ffffff;
+  color: #0d261c;
+  border: 0;
+  font-weight: 700;
+  border-radius: 999px;
+}
+.featured-hero-cta:hover {
+  background: #ecfdf5;
+}

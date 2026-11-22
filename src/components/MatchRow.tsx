@@ -1,6 +1,6 @@
 import type { CSSProperties } from 'react'
 import type { PilierId, Prediction } from '../domain/contracts'
-import { heureCourte, pilierLabel } from '../lib/format'
+import { heureCourte, pct, pilierLabel } from '../lib/format'
 import { Link } from '../lib/router'
 import { Crest } from './Crest'
 import { Icon } from './Icon'
@@ -37,12 +37,12 @@ function Pronos({ fiche, filtre }: { fiche: Prediction; filtre: Filtre }) {
   }
   const issue = (
     <Chip ton="ac">
-      {p.issue.court ?? p.issue.selection}
+      {p.issue.court ?? p.issue.selection} · {pct(p.issue.probabilite)}
     </Chip>
   )
   const buts = (
     <Chip>
-      {p.buts.court ?? p.buts.selection}
+      {p.buts.court ?? p.buts.selection} · {pct(p.buts.probabilite)}
     </Chip>
   )
   const bonus = p.bonus ? <Chip ton="am">{p.bonus.court ?? p.bonus.selection}</Chip> : <Chip ton="muet">Pas de bonus</Chip>
