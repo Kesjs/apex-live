@@ -38,7 +38,7 @@ export function StatsComparees({ fiche }: { fiche: Prediction }) {
   return (
     <section className="card data-card" aria-labelledby="stats-equipes">
       <SectionTitle id="stats-equipes">Comparaison avant le match</SectionTitle>
-      <p className="muted small cmp-note">Historique : {s.domicile.matchs} match(s) côté domicile, {s.exterieur.matchs} côté extérieur, avant cette rencontre. Source : {fiche.meta.source_stats}.</p>
+      <p className="muted small cmp-note">Historique : {s.domicile.matchs} match(s) côté domicile, {s.exterieur.matchs} côté extérieur, avant cette rencontre.</p>
       <div className="stat-table">
         <div className="stat-row stat-head">
           <span>{fiche.equipes.domicile}</span>
@@ -57,11 +57,6 @@ export function StatsComparees({ fiche }: { fiche: Prediction }) {
             </div>
           )
         })}
-        <div className="stat-row">
-          <strong>{s.domicile.derniers.join(' · ') || '—'}</strong>
-          <span>Derniers scores</span>
-          <strong>{s.exterieur.derniers.join(' · ') || '—'}</strong>
-        </div>
       </div>
       {m && <p className="muted small cmp-note">Les valeurs entre parenthèses sont la moyenne de la compétition. En vert : la meilleure valeur des deux équipes.</p>}
     </section>

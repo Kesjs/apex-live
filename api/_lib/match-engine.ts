@@ -1,6 +1,8 @@
 import type {
+  BilanH2H,
   Historique,
   JourHistorique,
+  MatchHistorique,
   PeriodeHistorique,
   PilierId,
   Prediction,
@@ -155,6 +157,110 @@ async function fetchFdTeamFinishedMatches(teamId: number, fdKey?: string): Promi
     8_000,
   )
   return cachedSet(cacheKey, data?.matches ?? [], 30 * 60_000)
+}
+
+type FdHead2HeadResponse = {
+  aggregates?: {
+    numberOfMatches?: number
+    homeTeam?: { id?: number; wins?: number; draws?: number; losses?: number }
+    awayTeam?: { id?: number; wins?: number; draws?: number; losses?: number }
+  }
+  matches?: FdMatch[]
+}
+
+async function fetchFdHead2Head(matchId: string, fdKey?: string): Promise<FdHead2HeadResponse | null> {
+  if (!fdKey) return null
+  const cacheKey = `fd:h2h:${matchId}`
+  const hit = cachedGet<FdHead2HeadResponse>(cacheKey)
+  if (hit) return hit
+  const data = await fetchJson<FdHead2HeadResponse>(
+    `${FD_BASE}/matches/${encodeURIComponent(matchId)}/head2head?limit=10`,
+    { 'X-Auth-Token': fdKey },
+    8_000,
+  )
+  if (!data) return null
+  return cachedSet(cacheKey, data, 30 * 60_000)
+}
+
+function fdMatchToHistorique(m: FdMatch): MatchHistorique | null {
+  const sd = m.score?.fullTime?.home
+  const se = m.score?.fullTime?.away
+  if (sd == null || se == null) return null
+  return {
+    id: String(m.id),
+    date_heure: m.utcDate,
+    competition: compDisplayName(m),
+    domicile: m.homeTeam?.name ?? m.homeTeam?.shortName ?? 'Équipe',
+    exterieur: m.awayTeam?.name ?? m.awayTeam?.shortName ?? 'Équipe',
+    logo_domicile: m.homeTeam?.crest,
+    logo_exterieur: m.awayTeam?.crest,
+    score_domicile: sd,
+    score_exterieur: se,
+  }
+}
+
+function buildRecentHistorique(matches: FdMatch[], currentId: string, beforeJour: string): MatchHistorique[] {
+  return matches
+    .filter(m => String(m.id) !== currentId && m.status === 'FINISHED' && (m.utcDate ?? '').slice(0, 10) <= beforeJour)
+    .sort((a, b) => (b.utcDate ?? '').localeCompare(a.utcDate ?? ''))
+    .map(fdMatchToHistorique)
+    .filter((x): x is MatchHistorique => x !== null)
+    .slice(0, 8)
+}
+
+function buildH2H(
+  raw: FdHead2HeadResponse | null,
+  currentId: string,
+  homeTeamId: number | undefined,
+  domName: string,
+): BilanH2H | undefined {
+  if (!raw?.matches?.length) return undefined
+  const matchs = raw.matches
+    .filter(m => String(m.id) !== currentId && m.status === 'FINISHED')
+    .sort((a, b) => (b.utcDate ?? '').localeCompare(a.utcDate ?? ''))
+    .map(fdMatchToHistorique)
+    .filter((x): x is MatchHistorique => x !== null)
+  if (matchs.length === 0) return undefined
+
+  const agg = raw.aggregates
+  if (
+    agg?.homeTeam?.wins != null &&
+    agg?.awayTeam?.wins != null &&
+    agg?.homeTeam?.draws != null &&
+    (!homeTeamId || agg.homeTeam.id === homeTeamId)
+  ) {
+    return {
+      total: agg.numberOfMatches ?? matchs.length,
+      victoires_domicile: agg.homeTeam.wins,
+      nuls: agg.homeTeam.draws,
+      victoires_exterieur: agg.awayTeam.wins,
+      matchs,
+    }
+  }
+
+  let victoiresDom = 0
+  let nuls = 0
+  let victoiresExt = 0
+  for (const item of matchs) {
+    if (item.score_domicile === item.score_exterieur) {
+      nuls++
+    } else {
+      const domWonMatch = item.score_domicile > item.score_exterieur
+      const currentDomIsMatchDom = memeEquipe(item.domicile, domName)
+      if ((domWonMatch && currentDomIsMatchDom) || (!domWonMatch && !currentDomIsMatchDom)) {
+        victoiresDom++
+      } else {
+        victoiresExt++
+      }
+    }
+  }
+  return {
+    total: matchs.length,
+    victoires_domicile: victoiresDom,
+    nuls,
+    victoires_exterieur: victoiresExt,
+    matchs,
+  }
 }
 
 async function fetchFdCompetitionFinished(compCode: string, fdKey?: string): Promise<FdMatch[]> {
@@ -635,10 +741,11 @@ export async function getMatchById(id: string, env: Record<string, string | unde
   const csvComp = FD_COMP_CSV[m.competition?.code ?? '']
   const neededCsv = csvComp ? [csvComp] : [...COMP_NAME_CSV]
 
-  const [stats, fdDom, fdExt] = await Promise.all([
+  const [stats, fdDom, fdExt, fdH2H] = await Promise.all([
     getStatsForCompetitions(neededCsv, seasonStartYear(jour), jour >= isoJour(now)),
     m.homeTeam.id ? fetchFdTeamFinishedMatches(m.homeTeam.id, fdKey) : Promise.resolve([]),
     m.awayTeam.id ? fetchFdTeamFinishedMatches(m.awayTeam.id, fdKey) : Promise.resolve([]),
+    fetchFdHead2Head(id, fdKey),
   ])
 
   const domCsv = stats.matchsEquipe(m.homeTeam.name, jour, 10)
@@ -674,6 +781,13 @@ export async function getMatchById(id: string, env: Record<string, string | unde
     awayGoals: m.score?.fullTime?.away,
     bonus: csvBonus,
   })
+  const h2h = buildH2H(fdH2H, id, m.homeTeam.id, m.homeTeam.name)
+  if (h2h) fiche.h2h = h2h
+  const histDom = buildRecentHistorique(fdDom, id, jour)
+  const histExt = buildRecentHistorique(fdExt, id, jour)
+  if (histDom.length > 0 || histExt.length > 0) {
+    fiche.historique_equipes = { domicile: histDom, exterieur: histExt }
+  }
   if (fiche.pronostics) {
     fiche.synthese = await produireSynthese(fiche, {})
   }

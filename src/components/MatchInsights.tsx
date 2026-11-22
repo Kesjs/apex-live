@@ -32,7 +32,7 @@ export function FactorsCard({ fiche }: { fiche: Prediction }) {
     <section className="card factors-card" aria-labelledby="facteurs">
       <SectionTitle id="facteurs">Pourquoi ce pronostic ?</SectionTitle>
       <div className="factor-list">{justifications.map(([label, text]) => <div className="factor-row" key={label}><strong>{label}</strong><span>{text}</span></div>)}</div>
-      <p className="muted small">Sources : {fiche.meta.source_stats}. Moteur {fiche.meta.version_moteur}.</p>
+      <p className="muted small">Moteur {fiche.meta.version_moteur}.</p>
     </section>
   )
 }

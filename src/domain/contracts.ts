@@ -138,6 +138,27 @@ export interface FormeRecente {
   exterieur: LettreForme[]
 }
 
+/** Match passé détaillé utilisé dans l'onglet H2H (confrontations directes et derniers matchs). */
+export interface MatchHistorique {
+  id: string
+  date_heure: string
+  competition: string
+  domicile: string
+  exterieur: string
+  logo_domicile?: string
+  logo_exterieur?: string
+  score_domicile: number
+  score_exterieur: number
+}
+
+export interface BilanH2H {
+  total: number
+  victoires_domicile: number
+  nuls: number
+  victoires_exterieur: number
+  matchs: MatchHistorique[]
+}
+
 /** Fiche complète d'un match. */
 export interface Prediction {
   match_id: string
@@ -156,6 +177,13 @@ export interface Prediction {
   synthese?: string
   forme?: FormeRecente
   stats?: StatsMatch
+  /** Confrontations directes entre les deux équipes (H2H). */
+  h2h?: BilanH2H
+  /** Derniers matchs détaillés de chaque équipe pour l'onglet H2H. */
+  historique_equipes?: {
+    domicile: MatchHistorique[]
+    exterieur: MatchHistorique[]
+  }
   meta: MetaFiche
   resultat: ResultatFiche
 }

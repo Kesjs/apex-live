@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { provider } from '../data'
 import type { Prediction } from '../domain/contracts'
 import ApexPromoCarousel from '../components/ApexPromoCarousel'
+import { AProposMatch } from '../components/AProposMatch'
+import { ConfrontationH2H } from '../components/ConfrontationH2H'
 import { Crest } from '../components/Crest'
 import { FaitsDuMatch } from '../components/FaitsDuMatch'
 import { FormStrip } from '../components/FormStrip'
@@ -23,7 +25,7 @@ import { FactorsCard, MatchSummary } from '../components/MatchInsights'
 import '../components/MatchInsights.css'
 import './MatchPage.css'
 
-type Tab = 'resume' | 'stats' | 'analyse'
+type Tab = 'resume' | 'stats' | 'h2h' | 'analyse'
 const dateMatch = (iso: string) => new Date(iso).toLocaleString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })
 
 function Resultat({ fiche }: { fiche: Prediction }) {
@@ -38,7 +40,7 @@ function Resultat({ fiche }: { fiche: Prediction }) {
         <div className="rmarks"><ResultMark label="Issue" valeur={r.issue} /><ResultMark label="Buts" valeur={r.buts} /><ResultMark label="Bonus" valeur={r.bonus} /><ResultMark label="Score exact" valeur={r.score} /></div>
         {r.bonus_en_attente && <p className="muted small">Le résultat du bonus attend les statistiques d’événements. Le score final est confirmé.</p>}
       </>}
-    </> : <p className="muted">{r.statut === 'annule' ? 'La rencontre est annulée ou reportée par la source. Les pronostics ne sont pas évalués.' : status.live ? 'Le coup d’envoi est dépassé. Le score sera affiché dès confirmation par la source.' : status.pending ? 'Le coup d’envoi prévu est passé. La source n’a pas encore confirmé le résultat.' : 'Le résultat sera affiché ici dès sa confirmation par la source.'}</p>}
+    </> : <p className="muted">{r.statut === 'annule' ? 'La rencontre est annulée ou reportée. Les pronostics ne sont pas évalués.' : status.live ? 'Le coup d’envoi est dépassé. Le score sera affiché dès confirmation.' : status.pending ? 'Le coup d’envoi prévu est passé. Le résultat n’a pas encore été confirmé.' : 'Le résultat sera affiché ici dès sa confirmation.'}</p>}
   </section>
 }
 
@@ -67,11 +69,11 @@ function Fiche({ fiche, retour, actualiser, enCours, erreur }: { fiche: Predicti
         <div className="match-hero-mid"><p className="match-hero-time tn">{status.score ?? heureCourte(fiche.date_heure)}</p><Chip ton={status.final || status.live ? 'ac' : 'muet'}>{status.label}</Chip></div>
         <div className="featured-team"><Crest nom={fiche.equipes.exterieur} logoUrl={fiche.logos?.exterieur} taille="xl" /><h1>{fiche.equipes.exterieur}</h1></div>
       </section>
-      <div className="match-freshness"><span>{status.label === 'À venir' ? <KickoffCountdown iso={fiche.date_heure} /> : status.final ? 'Score confirmé par ' + fiche.meta.source_stats : status.live ? 'En direct · score en attente de confirmation' : 'En attente de confirmation par la source'}</span><button type="button" className="refresh-match" disabled={enCours} onClick={actualiser}>{enCours ? 'Actualisation…' : 'Actualiser'}</button></div>
+      <div className="match-freshness"><span>{status.label === 'À venir' ? <KickoffCountdown iso={fiche.date_heure} /> : status.final ? 'Score final confirmé' : status.live ? 'En direct · score en attente de confirmation' : 'En attente de confirmation'}</span><button type="button" className="refresh-match" disabled={enCours} onClick={actualiser}>{enCours ? 'Actualisation…' : 'Actualiser'}</button></div>
       {fiche.resultat.mis_a_jour_le && <p className="muted small center">Résultat actualisé le {dateMatch(fiche.resultat.mis_a_jour_le)}</p>}
       {erreur && <p role="status" className="refresh-error">{erreur} Les dernières données chargées restent affichées.</p>}
     </header>
-    <nav className="match-tabs" aria-label="Sections du match">{([['resume', 'Résumé'], ['stats', 'Statistiques'], ['analyse', 'Analyse Apex']] as const).map(([id, label]) => <button key={id} type="button" aria-pressed={onglet === id} aria-controls="match-content" className={onglet === id ? 'is-active' : ''} onClick={() => setOnglet(id)}>{label}</button>)}</nav>
+    <nav className="match-tabs" aria-label="Sections du match">{([['resume', 'Résumé'], ['stats', 'Statistiques'], ['h2h', 'H2H'], ['analyse', 'Analyse Apex']] as const).map(([id, label]) => <button key={id} type="button" aria-pressed={onglet === id} aria-controls="match-content" className={onglet === id ? 'is-active' : ''} onClick={() => setOnglet(id)}>{label}</button>)}</nav>
     <div className="detail-grid" id="match-content">
       <div className="stack match-main">
         {onglet === 'resume' && <>
@@ -84,8 +86,9 @@ function Fiche({ fiche, retour, actualiser, enCours, erreur }: { fiche: Predicti
         </>}
         {onglet === 'stats' && <>
           {fiche.stats ? <><StatsComparees fiche={fiche} /><PlusMoins fiche={fiche} /></> : <section className="card state"><h2>Statistiques indisponibles</h2><p>Aucune statistique détaillée n’est disponible pour cette rencontre.</p></section>}
-          <section className="card match-coverage"><h2>Périmètre des données</h2><p className="muted small">Ces chiffres décrivent les rencontres précédant le coup d’envoi. Source : {fiche.meta.source_stats}{fiche.meta.source_cotes ? ` · Cotes : ${fiche.meta.source_cotes}` : ''}.</p></section>
+          <section className="card match-coverage"><h2>Périmètre des données</h2><p className="muted small">Ces chiffres décrivent les rencontres précédant le coup d’envoi.</p></section>
         </>}
+        {onglet === 'h2h' && <ConfrontationH2H fiche={fiche} />}
         {onglet === 'analyse' && <>
           <div className="analysis-notice"><Icon name="info" size={18} /><p>{status.final ? 'Analyse d’avant-match conservée pour comparer les prévisions au résultat réel.' : 'Estimations d’avant-match : les probabilités ne garantissent aucun résultat.'}</p></div>
           {fiche.meta.retrocalcul && <Chip ton="muet">Rétro-calcul avec les données antérieures au match</Chip>}
@@ -96,11 +99,12 @@ function Fiche({ fiche, retour, actualiser, enCours, erreur }: { fiche: Predicti
         </>}
       </div>
       <aside className="stack match-context" aria-label="Contexte du match">
-        {fiche.forme && <section className="stack-sm"><SectionTitle id="forme">Forme avant le match</SectionTitle><FormStrip forme={fiche.forme} domicile={fiche.equipes.domicile} exterieur={fiche.equipes.exterieur} /></section>}
+        {fiche.forme && <section className="stack-sm"><SectionTitle id="forme">Forme avant le match</SectionTitle><FormStrip forme={fiche.forme} domicile={fiche.equipes.domicile} exterieur={fiche.equipes.exterieur} historique={fiche.historique_equipes} /></section>}
         <FaitsDuMatch fiche={fiche} />
         <section className="match-ad stack-sm" aria-label="Offre partenaire"><SectionTitle id="offre-partenaire" aside={<span className="muted small">Publicité</span>}>Partenaire</SectionTitle><ApexPromoCarousel /><p className="muted small">Contenu sponsorisé, indépendant de l’analyse Apex.</p></section>
       </aside>
     </div>
+    <AProposMatch fiche={fiche} />
     <Disclaimer />
   </div>
 }
